@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CP Prima | Logistics Control Center</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            box-sizing: border-box;
+            scroll-behavior: smooth;
+        }
+        :root {
+            --primary-blue: #004A99;
+            --primary-red: #E30613;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+            --online: #10b981;
+            --offline: #ef4444;
+            --muat: #3b82f6;
+            --bongkar: #f59e0b;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            color: var(--text-dark);
+            line-height: 1.6;
+        }
+
+        /* Navbar */
+        nav {
+            position: sticky;
+            top: 0;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 15px 5%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .nav-logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            color: var(--primary-blue);
+            font-weight: 800;
+            font-size: 1.5rem;
+        }
+        .nav-logo span { color: var(--primary-red); }
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: var(--text-dark);
+            font-weight: 500;
+            font-size: 0.95rem;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover { color: var(--primary-blue); }
+
+        /* Hero Section */
+        .hero {
+            padding: 100px 5% 80px 5%;
+            background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: var(--bg-color);
+            transform: skewY(-2deg);
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            margin-bottom: 20px;
+            background: linear-gradient(to right, var(--primary-blue), var(--primary-red));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            line-height: 1.1;
+        }
+        .hero p {
+            max-width: 700px;
+            margin: 0 auto 40px auto;
+            font-size: 1.25rem;
+            color: var(--text-muted);
+        }
+        .cta-btn {
+            background: var(--primary-blue);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 99px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: transform 0.2s, background-color 0.2s;
+            display: inline-block;
+        }
+        .cta-btn:hover {
+            background: #003a7a;
+            transform: translateY(-2px);
+        }
+
+        /* Business Section */
+        .section-padding { padding: 100px 5%; }
+
+        /* Monitoring Section */
+        #monitoring { background: #f1f5f9; border-radius: 50px 50px 0 0; }
+        .monitor-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 40px;
+            max-width: 1400px;
+            margin: 0 auto 40px auto;
+        }
+        .monitor-title h2 { margin: 0; font-size: 2rem; color: var(--text-dark); }
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 700;
+            color: var(--primary-red);
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+        .pulse {
+            width: 8px;
+            height: 8px;
+            background: var(--primary-red);
+            border-radius: 50%;
+            animation: pulse-animation 2s infinite;
+        }
+        @keyframes pulse-animation {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(227, 6, 19, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(227, 6, 19, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(227, 6, 19, 0); }
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+            gap: 24px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 24px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid #f1f5f9;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px -10px rgba(0,0,0,0.1);
+        }
+        .status-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .status-header h2 { font-size: 1.15rem; margin: 0; }
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 9999px;
+            text-transform: uppercase;
+        }
+        .pill-online { background-color: #dcfce7; color: #166534; }
+        .pill-offline { background-color: #fee2e2; color: #991b1b; }
+        .dot { width: 6px; height: 6px; border-radius: 50%; }
+        .dot-online { background-color: var(--online); }
+        .dot-offline { background-color: var(--offline); }
+
+        .queue-summary {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .queue-badge {
+            flex: 1;
+            padding: 16px;
+            border-radius: 16px;
+            text-align: center;
+        }
+        .badge-muat { background-color: #eff6ff; border: 1px solid #dbeafe; }
+        .badge-bongkar { background-color: #fffbeb; border: 1px solid #fef3c7; }
+        .queue-val { font-size: 1.75rem; font-weight: 800; display: block; }
+        .queue-lbl { font-size: 0.7rem; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+
+        .avg-times {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .time-item {
+            text-align: center;
+            padding: 10px;
+            background-color: #f8fafc;
+            border-radius: 12px;
+        }
+        .time-val { font-weight: 700; font-size: 0.9rem; color: var(--primary-blue); display: block; }
+        .time-lbl { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+
+        .visit-btn {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 14px;
+            background-color: var(--text-dark);
+            color: white;
+            text-decoration: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.875rem;
+            transition: all 0.2s;
+        }
+        .visit-btn:hover { background-color: var(--primary-blue); }
+
+        /* Operational Highlights */
+        .ops-summary {
+            max-width: 1400px;
+            margin: 0 auto 30px auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+        .ops-stat {
+            background: white;
+            padding: 20px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            border: 1px solid #e2e8f0;
+        }
+        .ops-stat-icon {
+            width: 45px;
+            height: 45px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+        .ops-stat-info span { display: block; }
+        .ops-stat-val { font-weight: 800; font-size: 1.25rem; color: var(--text-dark); }
+        .ops-stat-lbl { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
+
+        .op-badge {
+            font-size: 0.65rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+        .badge-efficiency { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+        .badge-warning { background: #fffbeb; color: #92400e; border: 1px solid #fef3c7; }
+        .badge-busy { background: #fef2f2; color: #991b1b; border: 1px solid #fee2e2; }
+
+        .last-updated {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        footer {
+            background: var(--text-dark);
+            color: white;
+            padding: 60px 5% 30px 5%;
+            text-align: center;
+        }
+        .footer-logo { font-size: 1.5rem; font-weight: 800; margin-bottom: 20px; }
+        .footer-logo span { color: var(--primary-red); }
+        .copyright { color: #64748b; font-size: 0.85rem; border-top: 1px solid #1e293b; padding-top: 30px; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.5rem; }
+            .nav-links { display: none; }
+            .monitor-header { flex-direction: column; align-items: flex-start; gap: 15px; }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <a href="#" class="nav-logo">Warehouse <span>Ops</span></a>
+        <div class="nav-links">
+            <a href="#summary">Summary</a>
+            <a href="#monitoring">Live Monitor</a>
+            <a href="https://www.cpp.co.id" target="_blank" style="opacity: 0.7;">Corporate Site</a>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Warehouse Logistics<br>Control Center</h1>
+        <p>Real-time logistics flow monitoring system for warehouse operational efficiency at PT. Central Proteina Prima.</p>
+        <a href="#monitoring" class="cta-btn">Start Monitoring</a>
+    </section>
+
+    <section id="monitoring" class="section-padding">
+        <div id="summary" class="monitor-header">
+            <div class="monitor-title">
+                <h2>Real-Time Operations</h2>
+                <p style="color: var(--text-muted); margin-top: 10px;">Monitor loading-unloading performance and truck queues across all warehouse locations.</p>
+            </div>
+            <div class="live-indicator">
+                <div class="pulse"></div>
+                Live System
+            </div>
+        </div>
+
+        <div id="ops-summary" class="ops-summary">
+            <!-- Dynamic stats will be injected here -->
+        </div>
+
+        <div id="warehouse-grid" class="grid">
+            <!-- Cards injected by JS -->
+        </div>
+    </section>
+
+    <footer>
+        <div class="footer-logo">Warehouse <span>Operations</span></div>
+        <p style="margin-bottom: 10px;">Developed with ❤️ by <a href="https://instagram.com/araiisen" target="_blank" style="color: var(--primary-red); text-decoration: none; font-weight: 700;">arai</a></p>
+        <p class="copyright">© 2026 PT Central Proteina Prima Tbk - Internal Logistics Dashboard</p>
+    </footer>
+
+    <script>
+        const socket = io();
+        const grid = document.getElementById('warehouse-grid');
+        const opsSummary = document.getElementById('ops-summary');
+        let warehouses = {};
+
+        function renderCards() {
+            grid.innerHTML = '';
+            let totalQueues = 0;
+            let activeWarehouses = 0;
+            let avgProcessTime = 0;
+            let processCount = 0;
+
+            Object.keys(warehouses).forEach(id => {
+                const w = warehouses[id];
+                const stats = w.stats || { avg_waiting: 0, avg_loading: 0, avg_unloading: 0, muat_waiting: 0, bongkar_waiting: 0 };
+                const isOnline = w.status === 'online';
+                
+                if (isOnline) activeWarehouses++;
+                totalQueues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
+                
+                if (stats.avg_loading > 0) { avgProcessTime += stats.avg_loading; processCount++; }
+                if (stats.avg_unloading > 0) { avgProcessTime += stats.avg_unloading; processCount++; }
+
+                // Determine Operational Badge
+                let opBadge = '';
+                const totalInWarehouse = (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
+                if (totalInWarehouse > 15) opBadge = '<span class="op-badge badge-busy">High Traffic</span>';
+                else if (stats.avg_waiting < 10 && isOnline) opBadge = '<span class="op-badge badge-efficiency">Optimal</span>';
+                else if (stats.avg_waiting > 45) opBadge = '<span class="op-badge badge-warning">Delayed</span>';
+
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.innerHTML = `
+                    <div class="status-header">
+                        <div style="display:flex; align-items:center;">
+                            <h2>${w.name}</h2>
+                            ${opBadge}
+                        </div>
+                        <div class="status-pill ${isOnline ? 'pill-online' : 'pill-offline'}">
+                            <span class="dot ${isOnline ? 'dot-online' : 'dot-offline'}"></span>
+                            ${w.status}
+                        </div>
+                    </div>
+
+                    <div class="queue-summary">
+                        <div class="queue-badge badge-muat">
+                            <span class="queue-val" style="color: var(--muat)">${stats.muat_waiting || 0}</span>
+                            <span class="queue-lbl">Loading Queue</span>
+                        </div>
+                        <div class="queue-badge badge-bongkar">
+                            <span class="queue-val" style="color: var(--bongkar)">${stats.bongkar_waiting || 0}</span>
+                            <span class="queue-lbl">Unloading Queue</span>
+                        </div>
+                    </div>
+
+                    <div class="avg-times">
+                        <div class="time-item">
+                            <span class="time-val">${Math.round(stats.avg_waiting || 0)}m</span>
+                            <span class="time-lbl">Waiting</span>
+                        </div>
+                        <div class="time-item">
+                            <span class="time-val">${Math.round(stats.avg_loading || 0)}m</span>
+                            <span class="time-lbl">Loading</span>
+                        </div>
+                        <div class="time-item">
+                            <span class="time-val">${Math.round(stats.avg_unloading || 0)}m</span>
+                            <span class="time-lbl">Unloading</span>
+                        </div>
+                    </div>
+
+                    <a href="${w.url}" target="_blank" class="visit-btn">Visit Queue →</a>
+                    
+                    <div class="last-updated">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                        Active: ${w.last_update ? new Date(w.last_update).toLocaleTimeString() : 'N/A'}
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+
+            // Update Summary Bar
+            const avgProcess = processCount > 0 ? Math.round(avgProcessTime / processCount) : 0;
+            opsSummary.innerHTML = `
+                <div class="ops-stat">
+                    <div class="ops-stat-icon" style="background: #ecfdf5; color: #059669;">🏢</div>
+                    <div class="ops-stat-info">
+                        <span class="ops-stat-val">${activeWarehouses} / ${Object.keys(warehouses).length}</span>
+                        <span class="ops-stat-lbl">Active Warehouses</span>
+                    </div>
+                </div>
+                <div class="ops-stat">
+                    <div class="ops-stat-icon" style="background: #eff6ff; color: #2563eb;">🚛</div>
+                    <div class="ops-stat-info">
+                        <span class="ops-stat-val">${totalQueues} Units</span>
+                        <span class="ops-stat-lbl">Total Queues</span>
+                    </div>
+                </div>
+                <div class="ops-stat">
+                    <div class="ops-stat-icon" style="background: #fffbeb; color: #d97706;">⏱️</div>
+                    <div class="ops-stat-info">
+                        <span class="ops-stat-val">${avgProcess} Minutes</span>
+                        <span class="ops-stat-lbl">Avg. Process</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function fetchData() {
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    warehouses = data;
+                    renderCards();
+                })
+                .catch(err => console.error('Error fetching stats:', err));
+        }
+
+        // Initial fetch and 20-minute interval
+        fetchData();
+        setInterval(fetchData, 20 * 60 * 1000); // 20 minutes in ms
+
+        socket.on('warehouse_status_changed', (data) => {
+            if (warehouses[data.id]) {
+                warehouses[data.id].status = data.status;
+                if (data.url) warehouses[data.id].url = data.url;
+                renderCards();
+            }
+        });
+
+        socket.on('stats_updated', (data) => {
+            if (warehouses[data.id]) {
+                warehouses[data.id].stats = data.stats;
+                if (data.url) warehouses[data.id].url = data.url;
+                renderCards();
+            }
+        });
+    </script>
+</body>
+</html>
