@@ -364,17 +364,19 @@
         function renderCards() {
             grid.innerHTML = '';
             let totalQueues = 0;
+            let totalFinishedLifetime = 0;
             let activeWarehouses = 0;
             let avgProcessTime = 0;
             let processCount = 0;
 
             Object.keys(warehouses).forEach(id => {
                 const w = warehouses[id];
-                const stats = w.stats || { avg_waiting: 0, avg_loading: 0, avg_unloading: 0, muat_waiting: 0, bongkar_waiting: 0 };
+                const stats = w.stats || { avg_waiting: 0, avg_loading: 0, avg_unloading: 0, muat_waiting: 0, bongkar_waiting: 0, finished_today: 0, finished_lifetime: 0 };
                 const isOnline = w.status === 'online';
                 
                 if (isOnline) activeWarehouses++;
                 totalQueues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
+                totalFinishedLifetime += (stats.finished_lifetime || 0);
                 
                 if (stats.avg_loading > 0) { avgProcessTime += stats.avg_loading; processCount++; }
                 if (stats.avg_unloading > 0) { avgProcessTime += stats.avg_unloading; processCount++; }
@@ -411,7 +413,7 @@
                         </div>
                     </div>
 
-                    <div class="avg-times">
+                    <div class="avg-times" style="grid-template-columns: repeat(4, 1fr);">
                         <div class="time-item">
                             <span class="time-val">${Math.round(stats.avg_waiting || 0)}m</span>
                             <span class="time-lbl">Waiting</span>
@@ -423,6 +425,10 @@
                         <div class="time-item">
                             <span class="time-val">${Math.round(stats.avg_unloading || 0)}m</span>
                             <span class="time-lbl">Unloading</span>
+                        </div>
+                        <div class="time-item" style="background-color: #ecfdf5;">
+                            <span class="time-val" style="color: #059669;">${stats.finished_today || 0}</span>
+                            <span class="time-lbl">Finished</span>
                         </div>
                     </div>
 
@@ -454,10 +460,17 @@
                     </div>
                 </div>
                 <div class="ops-stat">
+                    <div class="ops-stat-icon" style="background: #f0fdf4; color: #166534;">✅</div>
+                    <div class="ops-stat-info">
+                        <span class="ops-stat-val">${totalFinishedLifetime} Units</span>
+                        <span class="ops-stat-lbl">Total Finished</span>
+                    </div>
+                </div>
+                <div class="ops-stat">
                     <div class="ops-stat-icon" style="background: #fffbeb; color: #d97706;">⏱️</div>
                     <div class="ops-stat-info">
                         <span class="ops-stat-val">${avgProcess} Minutes</span>
-                        <span class="ops-stat-lbl">Avg. Process</span>
+                        <span class="ops-stat-lbl">Avg. Process (30D)</span>
                     </div>
                 </div>
             `;
