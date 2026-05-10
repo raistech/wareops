@@ -29,6 +29,13 @@ db.exec(`
         key TEXT PRIMARY KEY,
         value TEXT
     );
+
+    CREATE TABLE IF NOT EXISTS warehouse_metrics (
+        warehouse_id TEXT PRIMARY KEY,
+        lifetime_loading INTEGER DEFAULT 0,
+        lifetime_unloading INTEGER DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 `);
 
 // Seed default settings if not exists

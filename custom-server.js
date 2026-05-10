@@ -10,6 +10,7 @@ require('dotenv').config();
 // Services & Routes
 const googleSheets = require('./src/services/googleSheets');
 const adminRoutes = require('./src/routes/admin');
+const db = require('./src/services/database');
 
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
@@ -20,13 +21,13 @@ const AUTH_TOKEN = process.env.AUTH_TOKEN;
 
 // Store latest stats for each warehouse
 const warehouseStats = {
-    'newgudang': { name: 'Gudang Waru', status: 'offline', stats: null, url: '#', occupancy: '0%', capacity: '0', actual: '0' },
-    'gudangkletek': { name: 'Gudang Kletek', status: 'offline', stats: null, url: 'https://gudangkletek.my.id', occupancy: '0%', capacity: '0', actual: '0' },
-    'gudangrm1': { name: 'RM Abba', status: 'offline', stats: null, url: 'https://gudangrmabba.my.id', occupancy: '0%', capacity: '0', actual: '0' },
-    'gudangrm2': { name: 'RM Cassaland', status: 'offline', stats: null, url: 'https://gudangcassaland.my.id', occupancy: '0%', capacity: '0', actual: '0' },
-    'gudangrm3': { name: 'RM Sumber Asia', status: 'offline', stats: null, url: 'https://gudangsumberasia.my.id', occupancy: '0%', capacity: '0', actual: '0' },
-    'gudangrm4': { name: 'RM Kemasan', status: 'offline', stats: null, url: 'https://gudangkemasan.my.id', occupancy: '0%', capacity: '0', actual: '0' },
-    'gudangpabrik': { name: 'RM Pabrik', status: 'offline', stats: null, url: '#', occupancy: '0%', capacity: '0', actual: '0' },
+    'newgudang': { name: 'Gudang Waru', status: 'offline', stats: null, url: '#', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
+    'gudangkletek': { name: 'Gudang Kletek', status: 'offline', stats: null, url: 'https://gudangkletek.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
+    'gudangrm1': { name: 'RM Abba', status: 'offline', stats: null, url: 'https://gudangrmabba.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
+    'gudangrm2': { name: 'RM Cassaland', status: 'offline', stats: null, url: 'https://gudangcassaland.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
+    'gudangrm3': { name: 'RM Sumber Asia', status: 'offline', stats: null, url: 'https://gudangsumberasia.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
+    'gudangrm4': { name: 'RM Kemasan', status: 'offline', stats: null, url: 'https://gudangkemasan.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
+    'gudangpabrik': { name: 'RM Pabrik', status: 'offline', stats: null, url: '#', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
 };
 
 app.prepare().then(() => {
@@ -69,7 +70,7 @@ app.prepare().then(() => {
                     warehouseStats[id].occupancy = data.occupancy;
                     warehouseStats[id].capacity = data.capacity;
                     warehouseStats[id].actual = data.actual;
-                    console.log(`[SYNC] Match found for ${id} (${nameInStats}): ${data.occupancy}`);
+                    console.log(`[SYNC] ${id} (${nameInStats}): Occ=${data.occupancy}, Act=${data.actual}, Cap=${data.capacity}`);
                 } else {
                     console.log(`[SYNC] No match for ${id} (${nameInStats}) in sheets`);
                 }
@@ -102,8 +103,15 @@ app.prepare().then(() => {
 
         socket.on('update_stats', (stats) => {
             if (socket.warehouseId && warehouseStats[socket.warehouseId]) {
+                // Directly use lifetime stats from client
+                warehouseStats[socket.warehouseId].lifetime = {
+                    loading: stats.finished_muat_lifetime || 0,
+                    unloading: stats.finished_bongkar_lifetime || 0
+                };
+
                 warehouseStats[socket.warehouseId].stats = stats;
                 warehouseStats[socket.warehouseId].last_update = new Date();
+                
                 io.emit('stats_updated', { 
                     id: socket.warehouseId, 
                     ...warehouseStats[socket.warehouseId]

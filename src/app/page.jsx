@@ -8,6 +8,7 @@ export default function Home() {
   const [warehouseStats, setWarehouseStats] = useState({});
   const [blogs, setBlogs] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState(null);
+  const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [summary, setSummary] = useState({
     activeWarehouses: 0,
     totalQueues: 0,
@@ -46,8 +47,10 @@ export default function Home() {
         const stats = w.stats || {};
         if (w.status === 'online') active++;
         queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
-        finishedLoading += (stats.finished_muat_today || 0);
-        finishedUnloading += (stats.finished_bongkar_today || 0);
+        
+        // Use LIFETIME stats for Global Activity
+        finishedLoading += (w.lifetime?.loading || 0);
+        finishedUnloading += (w.lifetime?.unloading || 0);
         
         if (stats.avg_loading > 0) { processTime += stats.avg_loading; count++; }
         if (stats.avg_unloading > 0) { processTime += stats.avg_unloading; count++; }
@@ -99,8 +102,10 @@ export default function Home() {
     });
 
     socket.on('occupancy_updated', (data) => {
+      console.log('Occupancy update received:', data);
       setWarehouseStats(data);
       calculateSummary(data);
+      setLastRefreshed(new Date());
     });
 
     fetch('/api/stats')
@@ -168,9 +173,14 @@ export default function Home() {
                 <h2 className="text-3xl font-bold m-0">Logistics Overview</h2>
                 <p className="text-[#64748b] mt-2 text-lg">Comprehensive summary of all warehouse operations.</p>
             </div>
-            <div className="flex items-center gap-2 font-bold text-[#E30613] text-sm uppercase tracking-wider">
-                <div className="w-2.5 h-2.5 bg-[#E30613] rounded-full animate-pulse shadow-[0_0_0_0_rgba(227,6,19,0.7)]"></div>
-                Live Update
+            <div className="flex flex-col items-end gap-1">
+                <div className="flex items-center gap-2 font-bold text-[#E30613] text-sm uppercase tracking-wider">
+                    <div className="w-2.5 h-2.5 bg-[#E30613] rounded-full animate-pulse shadow-[0_0_0_0_rgba(227,6,19,0.7)]"></div>
+                    Live Update
+                </div>
+                <div className="text-[0.65rem] text-slate-400 font-bold uppercase">
+                    Last sync: {lastRefreshed.toLocaleTimeString()}
+                </div>
             </div>
         </div>
 
@@ -274,22 +284,29 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-4 gap-2 mb-4">
-                    <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl">
-                      <span className="block font-bold text-sm text-[#004A99]">{Math.round(stats.avg_waiting || 0)}m</span>
-                      <span className="text-[0.6rem] text-[#64748b] font-bold uppercase">Wait (30D)</span>
+                  <div className="grid grid-cols-3 gap-2 mb-4">
+                    <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
+                      <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_waiting || 0)}m</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase">Wait (30D)</span>
                     </div>
-                    <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl">
-                      <span className="block font-bold text-sm text-[#004A99]">{Math.round(stats.avg_loading || 0)}m</span>
-                      <span className="text-[0.6rem] text-[#64748b] font-bold uppercase">Load (30D)</span>
+                    <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
+                      <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_loading || 0)}m</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase">Load (30D)</span>
                     </div>
-                    <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl">
-                      <span className="block font-bold text-sm text-[#004A99]">{Math.round(stats.avg_unloading || 0)}m</span>
-                      <span className="text-[0.6rem] text-[#64748b] font-bold uppercase">Unld (30D)</span>
+                    <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
+                      <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_unloading || 0)}m</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase">Unld (30D)</span>
                     </div>
-                    <div className="text-center p-2.5 bg-[#ecfdf5] rounded-xl">
-                      <span className="block font-bold text-sm text-[#059669]">{ (stats.finished_muat_today || 0) + (stats.finished_bongkar_today || 0) }</span>
-                      <span className="text-[0.6rem] text-[#64748b] font-bold uppercase">Finish</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mb-4">
+                    <div className="text-center p-2.5 bg-[#eff6ff] rounded-xl border border-blue-50">
+                      <span className="block font-bold text-sm text-[#004A99]">{w.lifetime?.loading || 0}</span>
+                      <span className="text-[0.6rem] text-[#64748b] font-bold uppercase tracking-tighter text-nowrap">Total Load Finish</span>
+                    </div>
+                    <div className="text-center p-2.5 bg-[#fff1f2] rounded-xl border border-red-50">
+                      <span className="block font-bold text-sm text-[#E30613]">{w.lifetime?.unloading || 0}</span>
+                      <span className="text-[0.6rem] text-[#64748b] font-bold uppercase tracking-tighter text-nowrap">Total Unld Finish</span>
                     </div>
                   </div>
 

@@ -56,25 +56,32 @@ const getOccupancyData = async () => {
         }
 
         const occupancyMap = {};
-        
+        const knownNames = ['RM ABBA', 'RM Cassaland', 'RM Sumber Asia', 'RM Kemasan', 'Gudang Waru', 'Gudang Kletek', 'RM Pabrik'];
+
         for (let i = 0; i < rows.length; i++) {
             const rowValue = rows[i][0] ? rows[i][0].trim() : '';
-            
-            const knownNames = ['RM ABBA', 'RM Cassaland', 'RM Sumber Asia', 'RM Kemasan', 'Gudang Waru', 'Gudang Kletek', 'RM Pabrik'];
             
             if (knownNames.some(kn => rowValue.toLowerCase() === kn.toLowerCase())) {
                 const warehouseName = rowValue;
                 const data = { occupancy: '0%', capacity: '0', actual: '0' };
                 
-                // Look ahead for specific labels
-                for (let j = i + 1; j < Math.min(i + 8, rows.length); j++) {
-                    const label = rows[j][0] ? rows[j][0].toUpperCase() : '';
+                // Look ahead for specific labels but stop if we hit another warehouse name
+                for (let j = i + 1; j < Math.min(i + 10, rows.length); j++) {
+                    const firstColValue = rows[j][0] ? rows[j][0].trim() : '';
+                    
+                    // Stop if we hit a new warehouse name
+                    if (firstColValue && knownNames.some(kn => firstColValue.toLowerCase() === kn.toLowerCase())) {
+                        break;
+                    }
+
+                    const label = firstColValue.toUpperCase();
                     const val = rows[j][dateColumnIndex] || '0';
                     
                     if (label.includes('KAPASITAS')) data.capacity = val;
                     if (label.includes('ACTUAL')) data.actual = val;
                     if (label.includes('OCCUPANCY')) data.occupancy = val;
                 }
+                
                 occupancyMap[warehouseName] = data;
             }
         }
