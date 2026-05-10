@@ -11,6 +11,7 @@ export default function Home() {
   const [banners, setBanners] = useState([]);
   const [currentBanner, setCurrentBanner] = useState(0);
   const [selectedBlog, setSelectedBlog] = useState(null);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [siteSettings, setSiteSettings] = useState({
     hero_title: 'Logistics Control Center',
@@ -223,28 +224,31 @@ export default function Home() {
 
       {/* Banners Section */}
       {banners.length > 0 && (
-          <section className="px-[5%] pb-24 bg-gradient-to-b from-[#e0f2fe] to-[#f1f5f9]">
+          <section className="px-[5%] pb-24 bg-gradient-to-b from-[#f0f9ff] to-[#f1f5f9]">
               <div className="max-w-[1400px] mx-auto relative group">
-                  <div className="relative aspect-[21/9] md:aspect-[25/8] w-full overflow-hidden rounded-[40px] shadow-2xl border-4 border-white">
-                      {banners.map((banner, idx) => (
-                          <div 
-                            key={banner.id} 
-                            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === currentBanner ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
-                          >
-                              {banner.link_url ? (
-                                  <a href={banner.link_url} target="_blank">
-                                      <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
-                                  </a>
-                              ) : (
-                                  <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" />
-                              )}
-                              {banner.title && (
-                                  <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-black/80 to-transparent text-white text-left">
-                                      <h2 className="text-3xl font-black">{banner.title}</h2>
-                                  </div>
-                              )}
-                          </div>
-                      ))}
+                  <div className="relative aspect-[21/9] md:aspect-[25/8] w-full overflow-hidden rounded-[40px] shadow-2xl border-4 border-white bg-white">
+                      {/* Sliding Container */}
+                      <div 
+                        className="absolute inset-0 flex transition-transform duration-700 ease-in-out" 
+                        style={{ transform: `translateX(-${currentBanner * 100}%)` }}
+                      >
+                          {banners.map((banner) => (
+                              <div key={banner.id} className="w-full h-full flex-shrink-0 relative">
+                                  {banner.link_url ? (
+                                      <a href={banner.link_url} target="_blank" className="block w-full h-full">
+                                          <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" />
+                                      </a>
+                                  ) : (
+                                      <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" />
+                                  )}
+                                  {banner.title && (
+                                      <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-left">
+                                          <h2 className="text-3xl md:text-5xl font-black drop-shadow-lg">{banner.title}</h2>
+                                      </div>
+                                  )}
+                              </div>
+                          ))}
+                      </div>
                   </div>
 
                   {/* Banner Controls */}
@@ -252,23 +256,24 @@ export default function Home() {
                       <>
                           <button 
                             onClick={() => setCurrentBanner(prev => (prev - 1 + banners.length) % banners.length)}
-                            className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-all"
+                            className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-4 bg-white/30 hover:bg-white/50 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:scale-110"
                           >
-                              <ChevronLeft size={30} />
+                              <ChevronLeft size={32} />
                           </button>
                           <button 
                             onClick={() => setCurrentBanner(prev => (prev + 1) % banners.length)}
-                            className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-all"
+                            className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-4 bg-white/30 hover:bg-white/50 backdrop-blur-xl rounded-full text-white opacity-0 group-hover:opacity-100 transition-all shadow-xl hover:scale-110"
                           >
-                              <ChevronRight size={30} />
+                              <ChevronRight size={32} />
                           </button>
-                          {/* Dots */}
-                          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+                          
+                          {/* Modern Dots */}
+                          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex gap-2">
                               {banners.map((_, idx) => (
                                   <button 
                                     key={idx} 
                                     onClick={() => setCurrentBanner(idx)}
-                                    className={`w-3 h-3 rounded-full transition-all ${idx === currentBanner ? 'bg-white w-8' : 'bg-white/40'}`}
+                                    className={`h-2 rounded-full transition-all duration-500 ${idx === currentBanner ? 'bg-white w-10 shadow-[0_0_15px_rgba(255,255,255,0.8)]' : 'bg-white/40 w-2 hover:bg-white/60'}`}
                                   />
                               ))}
                           </div>
@@ -456,8 +461,12 @@ export default function Home() {
                                 .filter(emp => emp.warehouse_id === id)
                                 .sort((a, b) => a.sort_order - b.sort_order)
                                 .map(emp => (
-                                    <div key={emp.id} className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
-                                        <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-200 border-2 border-white shadow-sm flex-shrink-0">
+                                    <div 
+                                      key={emp.id} 
+                                      onClick={() => setSelectedEmployee(emp)}
+                                      className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100/50 cursor-pointer hover:bg-white hover:shadow-md hover:-translate-y-0.5 transition-all group/emp"
+                                    >
+                                        <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-200 border-2 border-white shadow-sm flex-shrink-0 group-hover/emp:border-primary-blue transition-colors">
                                             {emp.image_url ? (
                                                 <img src={emp.image_url} alt={emp.name} className="w-full h-full object-cover" />
                                             ) : (
@@ -465,8 +474,8 @@ export default function Home() {
                                             )}
                                         </div>
                                         <div className="min-w-0 text-left">
-                                            <div className="text-[0.85rem] font-extrabold text-slate-800 truncate">{emp.name}</div>
-                                            <div className="text-[0.7rem] font-bold text-primary-blue uppercase tracking-tight truncate">{emp.position}</div>
+                                            <div className="text-[0.85rem] font-extrabold text-slate-800 truncate group-hover/emp:text-primary-blue transition-colors">{emp.name}</div>
+                                            <div className="text-[0.7rem] font-bold text-primary-blue uppercase tracking-tight truncate opacity-80">{emp.position}</div>
                                         </div>
                                     </div>
                                 ))
@@ -570,6 +579,52 @@ export default function Home() {
                 className="px-8 py-3 bg-[#0f172a] text-white rounded-full font-bold hover:bg-[#004A99] transition-all"
               >
                 Close Article
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Employee Modal */}
+      {selectedEmployee && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="bg-white rounded-[40px] w-full max-w-lg overflow-hidden flex flex-col shadow-2xl animate-in zoom-in duration-300">
+            <div className="relative p-10 flex flex-col items-center text-center">
+              <button 
+                onClick={() => setSelectedEmployee(null)}
+                className="absolute top-6 right-6 p-2 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+              >
+                <X size={20} />
+              </button>
+              
+              <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-primary-blue/20 p-1 mb-8">
+                <div className="w-full h-full rounded-full overflow-hidden bg-slate-100">
+                    {selectedEmployee.image_url ? (
+                        <img src={selectedEmployee.image_url} alt={selectedEmployee.name} className="w-full h-full object-cover" />
+                    ) : (
+                        <Users className="w-full h-full p-12 text-slate-300" />
+                    )}
+                </div>
+              </div>
+
+              <div className="text-[0.7rem] font-bold text-primary-blue uppercase tracking-[0.2em] mb-2">Staff Profile</div>
+              <h2 className="text-3xl font-black text-slate-900 mb-2">{selectedEmployee.name}</h2>
+              <p className="text-lg font-bold text-primary-red uppercase tracking-tight mb-8">{selectedEmployee.position}</p>
+              
+              <div className="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-center gap-3">
+                <Building2 size={20} className="text-slate-400" />
+                <span className="font-bold text-slate-600 uppercase text-sm">
+                    {Object.values(warehouseStats).find(w => w.name.toLowerCase().includes(selectedEmployee.warehouse_id.replace('gudang','').toLowerCase()))?.name || 'CP Prima Logistics'}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-slate-100 bg-slate-50">
+              <button 
+                onClick={() => setSelectedEmployee(null)}
+                className="w-full py-4 bg-slate-900 text-white rounded-2xl font-bold hover:bg-primary-blue transition-all shadow-lg"
+              >
+                Close Profile
               </button>
             </div>
           </div>
