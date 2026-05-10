@@ -36,6 +36,16 @@ db.exec(`
         lifetime_unloading INTEGER DEFAULT 0,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS employees (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        position TEXT NOT NULL,
+        image_url TEXT,
+        warehouse_id TEXT,
+        sort_order INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 `);
 
 // Seed default settings if not exists

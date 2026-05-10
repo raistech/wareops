@@ -15,6 +15,16 @@ const storage = multer.diskStorage({
 });
 const upload = multer({ storage });
 
+// Simple Auth Route
+router.post('/login', (req, res) => {
+    const { password } = req.body;
+    if (password === process.env.ADMIN_PASSWORD) {
+        res.json({ success: true, token: 'skye-admin-auth-token' });
+    } else {
+        res.status(401).json({ error: 'Invalid password' });
+    }
+});
+
 // Blog Routes
 router.get('/blogs', (req, res) => {
     const blogs = db.prepare('SELECT * FROM blogs ORDER BY created_at DESC').all();
@@ -24,10 +34,8 @@ router.get('/blogs', (req, res) => {
 router.post('/blogs', upload.single('image'), (req, res) => {
     const { title, content } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    
     const stmt = db.prepare('INSERT INTO blogs (title, content, image_url) VALUES (?, ?, ?)');
     const info = stmt.run(title, content, imageUrl);
-    
     res.json({ id: info.lastInsertRowid, title, imageUrl });
 });
 
@@ -45,12 +53,9 @@ router.get('/banners', (req, res) => {
 router.post('/banners', upload.single('image'), (req, res) => {
     const { title, link_url, is_active } = req.body;
     const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    
     if (!imageUrl) return res.status(400).json({ error: 'Image is required' });
-
     const stmt = db.prepare('INSERT INTO banners (title, image_url, link_url, is_active) VALUES (?, ?, ?, ?)');
     const info = stmt.run(title, imageUrl, link_url, is_active === 'true' ? 1 : 0);
-    
     res.json({ id: info.lastInsertRowid, imageUrl });
 });
 
@@ -59,41 +64,25 @@ router.delete('/banners/:id', (req, res) => {
     res.json({ success: true });
 });
 
-// Settings Routes
-router.get('/settings', (req, res) => {
-    const settings = db.prepare('SELECT * FROM settings').all();
-    const settingsObj = {};
-    settings.forEach(s => settingsObj[s.key] = s.value);
-    res.json(settingsObj);
+// Employee Routes
+router.get('/employees', (req, res) => {
+    const employees = db.prepare('SELECT * FROM employees ORDER BY warehouse_id, sort_order ASC').all();
+    res.json(employees);
 });
 
-router.post('/settings', (req, res) => {
-    const updates = req.body;
-    const stmt = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+router.post('/employees', upload.single('image'), (req, res) => {
+    const { name, position, warehouse_id, sort_order } = req.body;
+    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
     
-    const transaction = db.transaction((data) => {
-        for (const [key, value] of Object.entries(data)) {
-            stmt.run(key, value.toString());
-        }
-    });
+    const stmt = db.prepare('INSERT INTO employees (name, position, image_url, warehouse_id, sort_order) VALUES (?, ?, ?, ?, ?)');
+    const info = stmt.run(name, position, imageUrl, warehouse_id, sort_order || 0);
     
-    transaction(updates);
+    res.json({ id: info.lastInsertRowid, name, imageUrl });
+});
+
+router.delete('/employees/:id', (req, res) => {
+    db.prepare('DELETE FROM employees WHERE id = ?').run(req.params.id);
     res.json({ success: true });
-});
-
-// Simple Auth Route
-router.post('/login', (req, res) => {
-    const { password } = req.body;
-    console.log('[AUTH] Login attempt with password:', password);
-    console.log('[AUTH] Expected password from ENV:', process.env.ADMIN_PASSWORD);
-    
-    if (password === process.env.ADMIN_PASSWORD) {
-        console.log('[AUTH] Login successful');
-        res.json({ success: true, token: 'fake-jwt-token-for-now' });
-    } else {
-        console.log('[AUTH] Login failed: Invalid password');
-        res.status(401).json({ error: 'Invalid password' });
-    }
 });
 
 // Settings routes
@@ -112,13 +101,11 @@ router.post('/settings', (req, res) => {
     try {
         const settings = req.body;
         const upsert = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
-        
         const transaction = db.transaction((data) => {
             for (const [key, value] of Object.entries(data)) {
                 upsert.run(key, value ? value.toString() : '');
             }
         });
-        
         transaction(settings);
         res.json({ success: true });
     } catch (err) {

@@ -21,7 +21,7 @@ const AUTH_TOKEN = process.env.AUTH_TOKEN;
 
 // Store latest stats for each warehouse
 const warehouseStats = {
-    'newgudang': { name: 'Gudang Waru', status: 'offline', stats: null, url: '#', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
+    'newgudang': { name: 'Gudang Waru', status: 'offline', stats: null, url: 'https://gudangwaru.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
     'gudangkletek': { name: 'Gudang Kletek', status: 'offline', stats: null, url: 'https://gudangkletek.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
     'gudangrm1': { name: 'RM Abba', status: 'offline', stats: null, url: 'https://gudangrmabba.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
     'gudangrm2': { name: 'RM Cassaland', status: 'offline', stats: null, url: 'https://gudangcassaland.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },

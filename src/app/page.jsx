@@ -2,11 +2,14 @@
 
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { Database, Clock, Building2, Truck, CheckCircle2, Timer, ExternalLink, Newspaper, X, Layers, TrendingUp } from 'lucide-react';
+import { Database, Clock, Building2, Truck, CheckCircle2, Timer, ExternalLink, Newspaper, X, Layers, TrendingUp, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 
 export default function Home() {
   const [warehouseStats, setWarehouseStats] = useState({});
   const [blogs, setBlogs] = useState([]);
+  const [employees, setEmployees] = useState([]);
+  const [banners, setBanners] = useState([]);
+  const [currentBanner, setCurrentBanner] = useState(0);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [siteSettings, setSiteSettings] = useState({
@@ -35,13 +38,35 @@ export default function Home() {
     fetch('/api/admin/settings')
       .then(res => res.json())
       .then(data => {
-        if (Object.keys(data).length > 0) setSiteSettings(prev => ({ ...prev, ...data }));
-      });
+        if (data && typeof data === 'object' && !Array.isArray(data)) {
+            setSiteSettings(prev => ({ ...prev, ...data }));
+        }
+      })
+      .catch(err => console.error('Settings fetch error:', err));
 
     // Fetch blogs
     fetch('/api/admin/blogs')
       .then(res => res.json())
-      .then(data => setBlogs(data.slice(0, 3))); // Show latest 3
+      .then(data => {
+          if (Array.isArray(data)) setBlogs(data.slice(0, 3));
+      })
+      .catch(err => console.error('Blogs fetch error:', err));
+
+    // Fetch employees
+    fetch('/api/admin/employees')
+      .then(res => res.json())
+      .then(data => {
+          if (Array.isArray(data)) setEmployees(data);
+      })
+      .catch(err => console.error('Employees fetch error:', err));
+
+    // Fetch banners
+    fetch('/api/admin/banners')
+        .then(res => res.json())
+        .then(data => {
+            if (Array.isArray(data)) setBanners(data);
+        })
+        .catch(err => console.error('Banners fetch error:', err));
 
     const parseNum = (str) => {
         if (!str) return 0;
@@ -49,6 +74,7 @@ export default function Home() {
     };
 
     const calculateSummary = (data) => {
+      if (!data) return;
       let queues = 0;
       let finishedLoading = 0;
       let finishedUnloading = 0;
@@ -59,11 +85,11 @@ export default function Home() {
       let actual = 0;
 
       Object.values(data).forEach(w => {
+        if (!w) return;
         const stats = w.stats || {};
         if (w.status === 'online') active++;
         queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
         
-        // Use LIFETIME stats for Global Activity
         finishedLoading += (w.lifetime?.loading || 0);
         finishedUnloading += (w.lifetime?.unloading || 0);
         
@@ -87,6 +113,7 @@ export default function Home() {
     };
 
     socket.on('stats_updated', (data) => {
+      if (!data || !data.id) return;
       setWarehouseStats(prev => {
         const newState = {
           ...prev,
@@ -102,6 +129,7 @@ export default function Home() {
     });
 
     socket.on('warehouse_status_changed', (data) => {
+      if (!data || !data.id) return;
       setWarehouseStats(prev => {
         const newState = {
           ...prev,
@@ -117,7 +145,7 @@ export default function Home() {
     });
 
     socket.on('occupancy_updated', (data) => {
-      console.log('Occupancy update received:', data);
+      if (!data) return;
       setWarehouseStats(data);
       calculateSummary(data);
       setLastRefreshed(new Date());
@@ -126,19 +154,31 @@ export default function Home() {
     fetch('/api/stats')
       .then(res => res.json())
       .then(data => {
-        setWarehouseStats(data);
-        calculateSummary(data);
-      });
+        if (data) {
+            setWarehouseStats(data);
+            calculateSummary(data);
+        }
+      })
+      .catch(err => console.error('Stats fetch error:', err));
 
     return () => socket.close();
   }, []);
 
+  // Banner Auto-slide
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    const interval = setInterval(() => {
+        setCurrentBanner(prev => (prev + 1) % banners.length);
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [banners]);
+
   const getOccupancyPercent = (occ) => {
     if (!occ) return 0;
-    const match = occ.match(/(\d+\.?\d*)%/);
+    const match = occ.toString().match(/(\d+\.?\d*)%/);
     if (match) return Math.min(parseFloat(match[1]), 100);
-    if (occ.includes('/')) {
-        const parts = occ.split('/');
+    if (occ.toString().includes('/')) {
+        const parts = occ.toString().split('/');
         const val = Math.round((parseFloat(parts[0]) / parseFloat(parts[1])) * 100);
         return isNaN(val) ? 0 : Math.min(val, 100);
     }
@@ -155,9 +195,9 @@ export default function Home() {
     <div className="min-h-screen bg-[#f8fafc] font-sans text-[#0f172a]">
       {/* Navbar */}
       <nav className="sticky top-0 bg-white/90 backdrop-blur-md z-50 border-b border-[#e2e8f0] px-[5%] py-4 flex justify-between items-center">
-        <a href="#" className="flex items-center gap-2 text-[#004A99] font-extrabold text-2xl no-underline">
+        <div className="flex items-center gap-2 text-[#004A99] font-extrabold text-2xl">
           Warehouse <span className="text-[#E30613]">Ops</span>
-        </a>
+        </div>
         <div className="hidden md:flex gap-8">
             <a href="#summary" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Summary</a>
             <a href="#monitoring" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Live Monitor</a>
@@ -167,7 +207,7 @@ export default function Home() {
       </nav>
 
       {/* Hero */}
-      <section className="pt-24 pb-20 px-[5%] bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] text-center relative overflow-hidden after:content-[''] after:absolute after:-bottom-[50px] after:left-0 after:right-0 after:h-[100px] after:bg-[#f8fafc] after:-skew-y-2">
+      <section className="pt-24 pb-10 px-[5%] bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] text-center relative overflow-hidden">
         <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-[1.1] bg-gradient-to-r from-[#004A99] to-[#E30613] bg-clip-text text-transparent">
           {siteSettings.hero_title}
         </h1>
@@ -181,8 +221,65 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Banners Section */}
+      {banners.length > 0 && (
+          <section className="px-[5%] pb-24 bg-gradient-to-b from-[#e0f2fe] to-[#f1f5f9]">
+              <div className="max-w-[1400px] mx-auto relative group">
+                  <div className="relative aspect-[21/9] md:aspect-[25/8] w-full overflow-hidden rounded-[40px] shadow-2xl border-4 border-white">
+                      {banners.map((banner, idx) => (
+                          <div 
+                            key={banner.id} 
+                            className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${idx === currentBanner ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                          >
+                              {banner.link_url ? (
+                                  <a href={banner.link_url} target="_blank">
+                                      <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover hover:scale-105 transition-transform duration-700" />
+                                  </a>
+                              ) : (
+                                  <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" />
+                              )}
+                              {banner.title && (
+                                  <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-black/80 to-transparent text-white text-left">
+                                      <h2 className="text-3xl font-black">{banner.title}</h2>
+                                  </div>
+                              )}
+                          </div>
+                      ))}
+                  </div>
+
+                  {/* Banner Controls */}
+                  {banners.length > 1 && (
+                      <>
+                          <button 
+                            onClick={() => setCurrentBanner(prev => (prev - 1 + banners.length) % banners.length)}
+                            className="absolute left-6 top-1/2 -translate-y-1/2 z-20 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                              <ChevronLeft size={30} />
+                          </button>
+                          <button 
+                            onClick={() => setCurrentBanner(prev => (prev + 1) % banners.length)}
+                            className="absolute right-6 top-1/2 -translate-y-1/2 z-20 p-4 bg-white/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white opacity-0 group-hover:opacity-100 transition-all"
+                          >
+                              <ChevronRight size={30} />
+                          </button>
+                          {/* Dots */}
+                          <div className="absolute bottom-6 left-1/2 -translate-x-1/2 z-20 flex gap-3">
+                              {banners.map((_, idx) => (
+                                  <button 
+                                    key={idx} 
+                                    onClick={() => setCurrentBanner(idx)}
+                                    className={`w-3 h-3 rounded-full transition-all ${idx === currentBanner ? 'bg-white w-8' : 'bg-white/40'}`}
+                                  />
+                              ))}
+                          </div>
+                      </>
+                  )}
+              </div>
+          </section>
+      )}
+
       {/* Monitoring Section */}
-      <section id="monitoring" className="py-24 px-[5%] bg-[#f1f5f9] rounded-t-[50px]">
+      <section id="monitoring" className="py-24 px-[5%] bg-[#f1f5f9] rounded-t-[50px] -mt-12 relative z-10">
         <div id="summary" className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
             <div className="text-left">
                 <h2 className="text-3xl font-bold m-0">{siteSettings.overview_title}</h2>
@@ -213,7 +310,7 @@ export default function Home() {
                         <span className="text-5xl font-black text-[#0f172a]">{summary.activeWarehouses}</span>
                         <span className="text-slate-400 font-bold mb-1">/ {Object.keys(warehouseStats).length} Active</span>
                     </div>
-                    <div className="flex items-center gap-2 text-green-600 font-bold text-sm">
+                    <div className="flex items-center gap-2 text-green-600 font-bold text-sm text-left">
                         <TrendingUp size={16} /> All Systems Normal
                     </div>
                 </div>
@@ -222,7 +319,7 @@ export default function Home() {
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <Truck size={16} /> Total Activity
                     </h3>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 gap-4 text-left">
                         <div>
                             <span className="block text-2xl font-black text-[#004A99]">{summary.totalFinishedLoading}</span>
                             <span className="text-[0.65rem] font-bold text-slate-400 uppercase">Finish Loading</span>
@@ -232,13 +329,13 @@ export default function Home() {
                             <span className="text-[0.65rem] font-bold text-slate-400 uppercase">Finish Unload</span>
                         </div>
                     </div>
-                    <div className="pt-2 border-t border-slate-100">
+                    <div className="pt-2 border-t border-slate-100 text-left">
                         <span className="text-slate-600 font-bold">{summary.totalQueues} Units</span>
-                        <span className="text-[0.65rem] text-slate-400 ml-2 uppercase">In Current Queue</span>
+                        <span className="text-[0.65rem] text-slate-400 ml-2 uppercase tracking-tighter">In Current Queue</span>
                     </div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <Timer size={16} /> 30-Day Avg. Performance
                     </h3>
@@ -246,7 +343,7 @@ export default function Home() {
                     <p className="text-xs text-slate-500 leading-relaxed">Average processing time for loading and unloading across all units in the last 30 days.</p>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-6 text-left">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <Database size={16} /> Global Occupancy
                     </h3>
@@ -267,6 +364,7 @@ export default function Home() {
         {/* Warehouse Grid */}
         <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Object.entries(warehouseStats).map(([id, w]) => {
+              if (!w) return null;
               const stats = w.stats || {};
               const isOnline = w.status === 'online';
               const occPercent = getOccupancyPercent(w.occupancy);
@@ -291,26 +389,26 @@ export default function Home() {
                   <div className="flex gap-3 mb-5">
                     <div className="flex-1 p-4 rounded-2xl text-center bg-[#eff6ff] border border-[#dbeafe]">
                       <span className="block text-3xl font-black text-[#3b82f6] leading-none mb-1">{stats.muat_waiting || 0}</span>
-                      <span className="text-[0.7rem] font-bold text-[#64748b] uppercase">Loading Queue</span>
+                      <span className="text-[0.7rem] font-bold text-[#64748b] uppercase tracking-tighter">Loading Queue</span>
                     </div>
                     <div className="flex-1 p-4 rounded-2xl text-center bg-[#fffbeb] border border-[#fef3c7]">
                       <span className="block text-3xl font-black text-[#f59e0b] leading-none mb-1">{stats.bongkar_waiting || 0}</span>
-                      <span className="text-[0.7rem] font-bold text-[#64748b] uppercase">Unloading Queue</span>
+                      <span className="text-[0.7rem] font-bold text-[#64748b] uppercase tracking-tighter">Unloading Queue</span>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
                       <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_waiting || 0)}m</span>
-                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase">Wait (30D)</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Wait (30D)</span>
                     </div>
                     <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
                       <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_loading || 0)}m</span>
-                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase">Load (30D)</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Load (30D)</span>
                     </div>
                     <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
                       <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_unloading || 0)}m</span>
-                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase">Unld (30D)</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Unld (30D)</span>
                     </div>
                   </div>
 
@@ -346,6 +444,36 @@ export default function Home() {
                   <div className="mt-2.5 text-[0.65rem] text-[#64748b] flex items-center gap-1">
                     <Clock size={12} /> Active: {w.last_update ? new Date(w.last_update).toLocaleTimeString() : 'N/A'}
                   </div>
+
+                  {/* Employee / Org Structure Preview */}
+                  {Array.isArray(employees) && employees.filter(emp => emp.warehouse_id === id).length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-slate-100 text-left">
+                        <h4 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1 justify-start">
+                            <Users size={12} /> Organizational Structure
+                        </h4>
+                        <div className="space-y-3">
+                            {employees
+                                .filter(emp => emp.warehouse_id === id)
+                                .sort((a, b) => a.sort_order - b.sort_order)
+                                .map(emp => (
+                                    <div key={emp.id} className="flex items-center gap-4 bg-slate-50 p-3 rounded-2xl border border-slate-100/50">
+                                        <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-200 border-2 border-white shadow-sm flex-shrink-0">
+                                            {emp.image_url ? (
+                                                <img src={emp.image_url} alt={emp.name} className="w-full h-full object-cover" />
+                                            ) : (
+                                                <Users className="w-full h-full p-3.5 text-slate-400" />
+                                            )}
+                                        </div>
+                                        <div className="min-w-0 text-left">
+                                            <div className="text-[0.85rem] font-extrabold text-slate-800 truncate">{emp.name}</div>
+                                            <div className="text-[0.7rem] font-bold text-primary-blue uppercase tracking-tight truncate">{emp.position}</div>
+                                        </div>
+                                    </div>
+                                ))
+                            }
+                        </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -416,7 +544,7 @@ export default function Home() {
               )}
               <button 
                 onClick={() => setSelectedBlog(null)}
-                className="absolute top-6 right-6 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-colors"
+                className="absolute top-6 right-6 p-2 bg-black/20 hover:bg-white/40 backdrop-blur-md rounded-full text-white transition-colors"
               >
                 <X size={24} />
               </button>
