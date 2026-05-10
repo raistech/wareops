@@ -9,6 +9,14 @@ export default function Home() {
   const [blogs, setBlogs] = useState([]);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const [siteSettings, setSiteSettings] = useState({
+    hero_title: 'Logistics Control Center',
+    hero_description: 'Real-time logistics flow monitoring and warehouse operational efficiency PT. Central Proteina Prima.',
+    overview_title: 'Logistics Overview',
+    overview_description: 'Comprehensive summary of all warehouse operations.',
+    news_title: 'Latest News & Articles',
+    news_description: 'Stay updated with our latest logistics insights and company news.'
+  });
   const [summary, setSummary] = useState({
     activeWarehouses: 0,
     totalQueues: 0,
@@ -22,6 +30,13 @@ export default function Home() {
 
   useEffect(() => {
     const socket = io();
+
+    // Fetch site settings
+    fetch('/api/admin/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (Object.keys(data).length > 0) setSiteSettings(prev => ({ ...prev, ...data }));
+      });
 
     // Fetch blogs
     fetch('/api/admin/blogs')
@@ -154,10 +169,10 @@ export default function Home() {
       {/* Hero */}
       <section className="pt-24 pb-20 px-[5%] bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] text-center relative overflow-hidden after:content-[''] after:absolute after:-bottom-[50px] after:left-0 after:right-0 after:h-[100px] after:bg-[#f8fafc] after:-skew-y-2">
         <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-[1.1] bg-gradient-to-r from-[#004A99] to-[#E30613] bg-clip-text text-transparent">
-          Logistics Control Center
+          {siteSettings.hero_title}
         </h1>
         <p className="max-w-2xl mx-auto text-xl text-[#64748b] mb-10 text-center">
-          Real-time logistics flow monitoring and warehouse operational efficiencyPT. Central Proteina Prima.
+          {siteSettings.hero_description}
         </p>
         <div className="flex justify-center gap-4">
             <a href="#monitoring" className="bg-[#004A99] text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-[#003a7a] hover:-translate-y-0.5 transition-all inline-block no-underline shadow-lg">
@@ -169,9 +184,9 @@ export default function Home() {
       {/* Monitoring Section */}
       <section id="monitoring" className="py-24 px-[5%] bg-[#f1f5f9] rounded-t-[50px]">
         <div id="summary" className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
-            <div>
-                <h2 className="text-3xl font-bold m-0">Logistics Overview</h2>
-                <p className="text-[#64748b] mt-2 text-lg">Comprehensive summary of all warehouse operations.</p>
+            <div className="text-left">
+                <h2 className="text-3xl font-bold m-0">{siteSettings.overview_title}</h2>
+                <p className="text-[#64748b] mt-2 text-lg">{siteSettings.overview_description}</p>
             </div>
             <div className="flex flex-col items-end gap-1">
                 <div className="flex items-center gap-2 font-bold text-[#E30613] text-sm uppercase tracking-wider">
@@ -342,8 +357,8 @@ export default function Home() {
         <div className="max-w-[1400px] mx-auto">
           <div className="flex justify-between items-end mb-10 text-left">
             <div>
-              <h2 className="text-3xl font-bold text-[#0f172a] mb-2">Latest News & Articles</h2>
-              <p className="text-[#64748b] text-lg">Stay updated with our latest logistics insights and company news.</p>
+              <h2 className="text-3xl font-bold text-[#0f172a] mb-2">{siteSettings.news_title}</h2>
+              <p className="text-[#64748b] text-lg">{siteSettings.news_description}</p>
             </div>
           </div>
 

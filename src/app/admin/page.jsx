@@ -8,6 +8,14 @@ export default function AdminPage() {
   const [blogs, setBlogs] = useState([]);
   const [banners, setBanners] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [siteSettings, setSiteSettings] = useState({
+    hero_title: 'Logistics Control Center',
+    hero_description: 'Real-time logistics flow monitoring and warehouse operational efficiency PT. Central Proteina Prima.',
+    overview_title: 'Logistics Overview',
+    overview_description: 'Comprehensive summary of all warehouse operations.',
+    news_title: 'Latest News & Articles',
+    news_description: 'Stay updated with our latest logistics insights and company news.'
+  });
   const [newBlog, setNewBlog] = useState({ title: '', content: '' });
   const [blogImage, setBlogImage] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -24,8 +32,26 @@ export default function AdminPage() {
       if (activeTab === 'blogs') setBlogs(data);
       if (activeTab === 'banners') setBanners(data);
       if (activeTab === 'employees') setEmployees(data);
+      if (activeTab === 'settings') setSiteSettings(prev => ({ ...prev, ...data }));
     } catch (err) {
       console.error('Fetch error:', err);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(siteSettings)
+      });
+      if (res.ok) showMessage('success', 'Settings saved successfully');
+    } catch (err) {
+      showMessage('error', 'Failed to save settings');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -102,6 +128,12 @@ export default function AdminPage() {
             className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${activeTab === 'employees' ? 'bg-primary-blue' : 'hover:bg-slate-800'}`}
           >
             <Users size={20} /> Employees
+          </button>
+          <button 
+            onClick={() => setActiveTab('settings')}
+            className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary-blue' : 'hover:bg-slate-800'}`}
+          >
+            <Settings size={20} /> Site Settings
           </button>
         </nav>
       </div>
@@ -199,6 +231,90 @@ export default function AdminPage() {
             <ImageIcon size={48} className="mx-auto mb-4 text-slate-300" />
             <h3 className="text-xl font-bold mb-2">Banner Management</h3>
             <p className="text-slate-500 max-w-md mx-auto">Manage hero banners and promotional images for the company profile.</p>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="max-w-3xl">
+            <div className="bg-white p-8 rounded-2xl shadow-sm">
+              <h3 className="text-xl font-bold mb-6">General Site Settings</h3>
+              <form onSubmit={handleSaveSettings} className="space-y-8">
+                {/* Hero Section */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-primary-blue border-b pb-2 text-left">Hero Section</h4>
+                  <div className="text-left">
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
+                    <input 
+                      type="text" 
+                      value={siteSettings.hero_title}
+                      onChange={(e) => setSiteSettings({...siteSettings, hero_title: e.target.value})}
+                      className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue"
+                    />
+                  </div>
+                  <div className="text-left">
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Description</label>
+                    <textarea 
+                      value={siteSettings.hero_description}
+                      onChange={(e) => setSiteSettings({...siteSettings, hero_description: e.target.value})}
+                      className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue h-24"
+                    ></textarea>
+                  </div>
+                </div>
+
+                {/* Overview Section */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-primary-blue border-b pb-2 text-left">Logistics Overview</h4>
+                  <div className="text-left">
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
+                    <input 
+                      type="text" 
+                      value={siteSettings.overview_title}
+                      onChange={(e) => setSiteSettings({...siteSettings, overview_title: e.target.value})}
+                      className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue"
+                    />
+                  </div>
+                  <div className="text-left">
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Description</label>
+                    <textarea 
+                      value={siteSettings.overview_description}
+                      onChange={(e) => setSiteSettings({...siteSettings, overview_description: e.target.value})}
+                      className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue h-20"
+                    ></textarea>
+                  </div>
+                </div>
+
+                {/* News Section */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-primary-blue border-b pb-2 text-left">News & Articles</h4>
+                  <div className="text-left">
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
+                    <input 
+                      type="text" 
+                      value={siteSettings.news_title}
+                      onChange={(e) => setSiteSettings({...siteSettings, news_title: e.target.value})}
+                      className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue"
+                    />
+                  </div>
+                  <div className="text-left">
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Description</label>
+                    <textarea 
+                      value={siteSettings.news_description}
+                      onChange={(e) => setSiteSettings({...siteSettings, news_description: e.target.value})}
+                      className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue h-20"
+                    ></textarea>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full bg-slate-900 text-white p-4 rounded-lg font-bold hover:bg-black transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
+                  disabled={loading}
+                >
+                  {loading ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                  Save All Settings
+                </button>
+              </form>
+            </div>
           </div>
         )}
       </div>

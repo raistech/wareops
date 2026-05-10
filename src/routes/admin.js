@@ -96,4 +96,34 @@ router.post('/login', (req, res) => {
     }
 });
 
+// Settings routes
+router.get('/settings', (req, res) => {
+    try {
+        const rows = db.prepare('SELECT * FROM settings').all();
+        const settings = {};
+        rows.forEach(row => settings[row.key] = row.value);
+        res.json(settings);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/settings', (req, res) => {
+    try {
+        const settings = req.body;
+        const upsert = db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)');
+        
+        const transaction = db.transaction((data) => {
+            for (const [key, value] of Object.entries(data)) {
+                upsert.run(key, value ? value.toString() : '');
+            }
+        });
+        
+        transaction(settings);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
