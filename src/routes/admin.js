@@ -113,4 +113,15 @@ router.post('/settings', (req, res) => {
     }
 });
 
+router.post('/settings/icon', upload.single('image'), (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const imageUrl = `/uploads/${req.file.filename}`;
+        db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('site_icon', imageUrl);
+        res.json({ success: true, imageUrl });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

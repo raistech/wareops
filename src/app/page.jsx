@@ -14,6 +14,9 @@ export default function Home() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [siteSettings, setSiteSettings] = useState({
+    site_title: 'CP Prima | Monitoring Warehouse',
+    site_name: 'Warehouse Ops',
+    site_icon: '',
     hero_title: 'Logistics Control Center',
     hero_description: 'Real-time logistics flow monitoring and warehouse operational efficiency PT. Central Proteina Prima.',
     overview_title: 'Logistics Overview',
@@ -41,6 +44,16 @@ export default function Home() {
       .then(data => {
         if (data && typeof data === 'object' && !Array.isArray(data)) {
             setSiteSettings(prev => ({ ...prev, ...data }));
+            if (data.site_title) document.title = data.site_title;
+            if (data.site_icon) {
+                let link = document.querySelector("link[rel~='icon']");
+                if (!link) {
+                    link = document.createElement('link');
+                    link.rel = 'icon';
+                    document.head.appendChild(link);
+                }
+                link.href = data.site_icon;
+            }
         }
       })
       .catch(err => console.error('Settings fetch error:', err));
@@ -197,7 +210,10 @@ export default function Home() {
       {/* Navbar */}
       <nav className="sticky top-0 bg-white/90 backdrop-blur-md z-50 border-b border-[#e2e8f0] px-[5%] py-4 flex justify-between items-center">
         <div className="flex items-center gap-2 text-[#004A99] font-extrabold text-2xl">
-          Warehouse <span className="text-[#E30613]">Ops</span>
+          {siteSettings.site_name.split(' ').map((word, i) => (
+              <span key={i} className={i === 1 ? 'text-[#E30613]' : ''}>{word} </span>
+          ))}
+          {siteSettings.site_name.split(' ').length === 1 && <span>&nbsp;</span>}
         </div>
         <div className="hidden md:flex gap-8">
             <a href="#summary" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Summary</a>

@@ -50,7 +50,9 @@ db.exec(`
 
 // Seed default settings if not exists
 const seedSettings = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
-seedSettings.run('site_title', 'Warehouse Monitoring & CMS');
+seedSettings.run('site_title', 'CP Prima | Monitoring Warehouse');
+seedSettings.run('site_name', 'Warehouse Ops');
+seedSettings.run('site_icon', '');
 seedSettings.run('occupancy_sync_interval', '15'); // in minutes
 
 module.exports = db;

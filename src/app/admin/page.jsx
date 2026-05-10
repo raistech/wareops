@@ -11,6 +11,9 @@ export default function AdminPage() {
   const [banners, setBanners] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [siteSettings, setSiteSettings] = useState({
+    site_title: 'CP Prima | Monitoring Warehouse',
+    site_name: 'Warehouse Ops',
+    site_icon: '',
     hero_title: 'Logistics Control Center',
     hero_description: 'Real-time logistics flow monitoring and warehouse operational efficiency PT. Central Proteina Prima.',
     overview_title: 'Logistics Overview',
@@ -197,6 +200,30 @@ export default function AdminPage() {
       if (res.ok) showMessage('success', 'Settings saved successfully');
     } catch (err) {
       showMessage('error', 'Failed to save settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUploadIcon = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch('/api/admin/settings/icon', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSiteSettings(prev => ({ ...prev, site_icon: data.imageUrl }));
+        showMessage('success', 'Site icon updated');
+      }
+    } catch (err) {
+      showMessage('error', 'Failed to upload icon');
     } finally {
       setLoading(false);
     }
@@ -442,6 +469,32 @@ export default function AdminPage() {
             <div className="bg-white p-8 rounded-2xl shadow-sm">
               <h3 className="text-xl font-bold mb-6">General Site Settings</h3>
               <form onSubmit={handleSaveSettings} className="space-y-8 text-left">
+                {/* Branding Section */}
+                <div className="space-y-4 text-left">
+                  <h4 className="font-bold text-primary-blue border-b pb-2">Website Branding</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div>
+                        <label className="block text-sm font-bold text-slate-600 mb-1">Navbar Name (Top Left)</label>
+                        <input type="text" value={siteSettings.site_name} onChange={(e) => setSiteSettings({...siteSettings, site_name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" placeholder="e.g. Warehouse Ops" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-bold text-slate-600 mb-1">Browser Tab Title</label>
+                        <input type="text" value={siteSettings.site_title} onChange={(e) => setSiteSettings({...siteSettings, site_title: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" placeholder="e.g. CP Prima | Monitoring" />
+                      </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Website Icon (Favicon)</label>
+                    <div className="flex items-center gap-4">
+                        {siteSettings.site_icon && (
+                            <div className="w-10 h-10 bg-slate-100 rounded p-1 border">
+                                <img src={siteSettings.site_icon} className="w-full h-full object-contain" alt="icon" />
+                            </div>
+                        )}
+                        <input type="file" onChange={handleUploadIcon} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-primary-blue hover:file:bg-blue-100" />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Hero Section */}
                 <div className="space-y-4 text-left">
                   <h4 className="font-bold text-primary-blue border-b pb-2">Hero Section</h4>
