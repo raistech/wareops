@@ -20,7 +20,9 @@ export default function AdminPage() {
     overview_title: 'Logistics Overview',
     overview_description: 'Comprehensive summary of all warehouse operations.',
     news_title: 'Latest News & Articles',
-    news_description: 'Stay updated with our latest logistics insights and company news.'
+    news_description: 'Stay updated with our latest logistics insights and company news.',
+    monitoring_title: 'Warehouse Overview',
+    monitoring_description: 'Detailed real-time monitoring for each warehouse unit.'
   });
   
   // Form states
@@ -317,7 +319,7 @@ export default function AdminPage() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 p-10 overflow-auto">
+      <div className="flex-1 p-10 overflow-auto text-left">
         <header className="flex justify-between items-center mb-10">
           <h2 className="text-3xl font-bold text-slate-800 capitalize">{activeTab} Management</h2>
           {message.text && (
@@ -329,7 +331,7 @@ export default function AdminPage() {
 
         {activeTab === 'blogs' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="bg-white p-8 rounded-2xl shadow-sm h-fit text-left">
+            <div className="bg-white p-8 rounded-2xl shadow-sm h-fit">
               <h3 className="text-xl font-bold mb-6">Create New Article</h3>
               <form onSubmit={handleCreateBlog} className="space-y-4">
                 <div>
@@ -351,7 +353,7 @@ export default function AdminPage() {
               </form>
             </div>
 
-            <div className="space-y-4 text-left">
+            <div className="space-y-4">
               <h3 className="text-xl font-bold mb-6">Recent Articles</h3>
               {blogs.map(blog => (
                 <div key={blog.id} className="bg-white p-4 rounded-xl shadow-sm flex gap-4 items-center">
@@ -371,7 +373,7 @@ export default function AdminPage() {
 
         {activeTab === 'employees' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-            <div className="bg-white p-8 rounded-2xl shadow-sm h-fit text-left">
+            <div className="bg-white p-8 rounded-2xl shadow-sm h-fit">
               <h3 className="text-xl font-bold mb-6">Add New Staff / Org Structure</h3>
               <form onSubmit={handleCreateEmployee} className="space-y-4">
                 <div>
@@ -399,7 +401,7 @@ export default function AdminPage() {
               </form>
             </div>
 
-            <div className="space-y-4 text-left">
+            <div className="space-y-4">
               <h3 className="text-xl font-bold mb-6">Current Organization</h3>
               {employees.length === 0 && <p className="text-slate-400 italic">No staff added yet.</p>}
               {employees.map(emp => (
@@ -422,7 +424,7 @@ export default function AdminPage() {
         )}
 
         {activeTab === 'banners' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
             <div className="bg-white p-8 rounded-2xl shadow-sm h-fit">
               <h3 className="text-xl font-bold mb-6">Upload New Banner</h3>
               <form onSubmit={handleCreateBanner} className="space-y-4">
@@ -469,26 +471,26 @@ export default function AdminPage() {
           <div className="max-w-3xl">
             <div className="bg-white p-8 rounded-2xl shadow-sm">
               <h3 className="text-xl font-bold mb-6">General Site Settings</h3>
-              <form onSubmit={handleSaveSettings} className="space-y-8 text-left">
+              <form onSubmit={handleSaveSettings} className="space-y-8">
                 {/* Branding Section */}
-                <div className="space-y-4 text-left">
-                  <h4 className="font-bold text-primary-blue border-b pb-2">Website Branding</h4>
+                <div className="space-y-4">
+                  <h4 className="font-bold text-primary-blue border-b pb-2 text-left">Website Branding</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-bold text-slate-600 mb-1">Navbar Name (Top Left)</label>
-                        <input type="text" value={siteSettings.site_name} onChange={(e) => setSiteSettings({...siteSettings, site_name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" placeholder="e.g. Warehouse Ops" />
+                        <label className="block text-sm font-bold text-slate-600 mb-1">Navbar Name</label>
+                        <input type="text" value={siteSettings.site_name} onChange={(e) => setSiteSettings({...siteSettings, site_name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" />
                       </div>
                       <div>
                         <label className="block text-sm font-bold text-slate-600 mb-1">Browser Tab Title</label>
-                        <input type="text" value={siteSettings.site_title} onChange={(e) => setSiteSettings({...siteSettings, site_title: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" placeholder="e.g. CP Prima | Monitoring" />
+                        <input type="text" value={siteSettings.site_title} onChange={(e) => setSiteSettings({...siteSettings, site_title: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" />
                       </div>
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-600 mb-1">Company Name (Popups Footer)</label>
-                    <input type="text" value={siteSettings.company_name} onChange={(e) => setSiteSettings({...siteSettings, company_name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" placeholder="e.g. CP Prima Logistics" />
+                    <input type="text" value={siteSettings.company_name} onChange={(e) => setSiteSettings({...siteSettings, company_name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" />
                   </div>
                   <div>
-                    <label className="block text-sm font-bold text-slate-600 mb-1">Website Icon (Favicon)</label>
+                    <label className="block text-sm font-bold text-slate-600 mb-1 text-left">Website Icon (Favicon)</label>
                     <div className="flex items-center gap-4">
                         {siteSettings.site_icon && (
                             <div className="w-10 h-10 bg-slate-100 rounded p-1 border">
@@ -501,8 +503,8 @@ export default function AdminPage() {
                 </div>
 
                 {/* Hero Section */}
-                <div className="space-y-4 text-left">
-                  <h4 className="font-bold text-primary-blue border-b pb-2">Hero Section</h4>
+                <div className="space-y-4">
+                  <h4 className="font-bold text-primary-blue border-b pb-2 text-left">Hero Section</h4>
                   <div>
                     <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
                     <input type="text" value={siteSettings.hero_title} onChange={(e) => setSiteSettings({...siteSettings, hero_title: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" />
@@ -513,8 +515,9 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4 text-left">
-                  <h4 className="font-bold text-primary-blue border-b pb-2">Logistics Overview</h4>
+                {/* Overview Section */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-primary-blue border-b pb-2 text-left">Logistics Overview</h4>
                   <div>
                     <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
                     <input type="text" value={siteSettings.overview_title} onChange={(e) => setSiteSettings({...siteSettings, overview_title: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" />
@@ -525,8 +528,9 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <div className="space-y-4 text-left">
-                  <h4 className="font-bold text-primary-blue border-b pb-2">News & Articles</h4>
+                {/* News Section */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-primary-blue border-b pb-2 text-left">News & Articles</h4>
                   <div>
                     <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
                     <input type="text" value={siteSettings.news_title} onChange={(e) => setSiteSettings({...siteSettings, news_title: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" />
@@ -534,6 +538,19 @@ export default function AdminPage() {
                   <div>
                     <label className="block text-sm font-bold text-slate-600 mb-1">Description</label>
                     <textarea value={siteSettings.news_description} onChange={(e) => setSiteSettings({...siteSettings, news_description: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue h-20"></textarea>
+                  </div>
+                </div>
+
+                {/* Monitoring Section */}
+                <div className="space-y-4 text-left">
+                  <h4 className="font-bold text-primary-blue border-b pb-2 text-left text-left">Warehouse Monitoring Grid</h4>
+                  <div className="text-left">
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
+                    <input type="text" value={siteSettings.monitoring_title} onChange={(e) => setSiteSettings({...siteSettings, monitoring_title: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" />
+                  </div>
+                  <div className="text-left">
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Description</label>
+                    <textarea value={siteSettings.monitoring_description} onChange={(e) => setSiteSettings({...siteSettings, monitoring_description: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue h-20"></textarea>
                   </div>
                 </div>
 

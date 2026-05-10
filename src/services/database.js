@@ -54,6 +54,8 @@ seedSettings.run('site_title', 'CP Prima | Monitoring Warehouse');
 seedSettings.run('site_name', 'Warehouse Ops');
 seedSettings.run('company_name', 'CP Prima Logistics');
 seedSettings.run('site_icon', '');
+seedSettings.run('monitoring_title', 'Warehouse Overview');
+seedSettings.run('monitoring_description', 'Comprehensive summary of all warehouse operations.');
 seedSettings.run('occupancy_sync_interval', '15'); // in minutes
 
 module.exports = db;
