@@ -12,6 +12,7 @@ export default function Home() {
   const [currentBanner, setCurrentBanner] = useState(0);
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [selectedBanner, setSelectedBanner] = useState(null);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [siteSettings, setSiteSettings] = useState({
     site_title: 'CP Prima | Monitoring Warehouse',
@@ -250,14 +251,12 @@ export default function Home() {
                         style={{ transform: `translateX(-${currentBanner * 100}%)` }}
                       >
                           {banners.map((banner) => (
-                              <div key={banner.id} className="w-full h-full flex-shrink-0 relative">
-                                  {banner.link_url ? (
-                                      <a href={banner.link_url} target="_blank" className="block w-full h-full">
-                                          <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" />
-                                      </a>
-                                  ) : (
-                                      <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" />
-                                  )}
+                              <div 
+                                key={banner.id} 
+                                onClick={() => setSelectedBanner(banner)}
+                                className="w-full h-full flex-shrink-0 relative cursor-pointer"
+                              >
+                                  <img src={banner.image_url} alt={banner.title} className="w-full h-full object-cover" />
                                   {banner.title && (
                                       <div className="absolute bottom-0 left-0 right-0 p-10 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white text-left">
                                           <h2 className="text-3xl md:text-5xl font-black drop-shadow-lg">{banner.title}</h2>
@@ -643,6 +642,48 @@ export default function Home() {
               >
                 Close Profile
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Banner Modal */}
+      {selectedBanner && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="bg-white rounded-[40px] w-full max-w-5xl overflow-hidden flex flex-col shadow-2xl animate-in zoom-in duration-300">
+            <div className="relative aspect-[21/9] md:aspect-[25/8] bg-slate-100">
+              <img src={selectedBanner.image_url} alt="" className="w-full h-full object-cover" />
+              <button 
+                onClick={() => setSelectedBanner(null)}
+                className="absolute top-6 right-6 p-2 bg-black/20 hover:bg-black/40 backdrop-blur-md rounded-full text-white transition-colors"
+              >
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 bg-white">
+              <div className="text-left flex-1">
+                <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">{selectedBanner.title || 'Special Promotion'}</h2>
+                <p className="text-slate-500 font-medium">PT. Central Proteina Prima - Warehouse Information Center</p>
+              </div>
+              
+              <div className="flex gap-4 w-full md:w-auto">
+                  {selectedBanner.link_url && (
+                    <a 
+                      href={selectedBanner.link_url} 
+                      target="_blank"
+                      className="flex-1 md:flex-none px-8 py-4 bg-primary-blue text-white rounded-2xl font-bold hover:bg-blue-900 transition-all shadow-lg flex items-center justify-center gap-2"
+                    >
+                      Visit Link <ExternalLink size={20} />
+                    </a>
+                  )}
+                  <button 
+                    onClick={() => setSelectedBanner(null)}
+                    className="flex-1 md:flex-none px-8 py-4 bg-slate-100 text-slate-600 rounded-2xl font-bold hover:bg-slate-200 transition-all flex items-center justify-center"
+                  >
+                    Close
+                  </button>
+              </div>
             </div>
           </div>
         </div>
