@@ -228,7 +228,6 @@ export default function Home() {
             <a href="#summary" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Summary</a>
             <a href="#news" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">News</a>
             <a href="#monitoring" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Monitoring</a>
-            <a href="/admin" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors border-l pl-8 border-slate-200">Admin Panel</a>
         </div>
 
         {/* Mobile Hamburger Button */}
