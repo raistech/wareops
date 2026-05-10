@@ -1,0 +1,12 @@
+{
+  "apps": [
+    {
+      "name": "monitoring-warehouse",
+      "script": "custom-server.js",
+      "env": {
+        "NODE_ENV": "production",
+        "PORT": 23670
+      }
+    }
+  ]
+}

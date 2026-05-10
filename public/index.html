@@ -216,7 +216,7 @@
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 8px;
-            margin-bottom: 24px;
+            margin-bottom: 16px;
         }
         .time-item {
             text-align: center;
@@ -226,6 +226,33 @@
         }
         .time-val { font-weight: 700; font-size: 0.9rem; color: var(--primary-blue); display: block; }
         .time-lbl { font-size: 0.6rem; color: var(--text-muted); text-transform: uppercase; font-weight: 600; }
+
+        /* Occupancy Display */
+        .occupancy-container {
+            background-color: #f1f5f9;
+            padding: 12px;
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+        .occupancy-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        .occupancy-lbl { font-size: 0.7rem; font-weight: 700; color: var(--text-dark); text-transform: uppercase; }
+        .occupancy-val { font-size: 0.75rem; font-weight: 800; color: var(--primary-blue); }
+        .progress-bar {
+            height: 6px;
+            background-color: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(to right, #3b82f6, #2563eb);
+            transition: width 0.5s ease-out;
+        }
 
         .visit-btn {
             margin-top: auto;
@@ -388,6 +415,18 @@
                 else if (stats.avg_waiting < 10 && isOnline) opBadge = '<span class="op-badge badge-efficiency">Optimal</span>';
                 else if (stats.avg_waiting > 45) opBadge = '<span class="op-badge badge-warning">Delayed</span>';
 
+                // Calculate occupancy percentage for progress bar
+                let occPercent = 0;
+                if (w.occupancy) {
+                    const match = w.occupancy.match(/(\d+)%/);
+                    if (match) occPercent = parseInt(match[1]);
+                    else if (w.occupancy.includes('/')) {
+                        const parts = w.occupancy.split('/');
+                        occPercent = Math.round((parseInt(parts[0]) / parseInt(parts[1])) * 100);
+                    }
+                }
+                if (occPercent > 100) occPercent = 100;
+
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
@@ -429,6 +468,16 @@
                         <div class="time-item" style="background-color: #ecfdf5;">
                             <span class="time-val" style="color: #059669;">${stats.finished_today || 0}</span>
                             <span class="time-lbl">Finished</span>
+                        </div>
+                    </div>
+
+                    <div class="occupancy-container">
+                        <div class="occupancy-header">
+                            <span class="occupancy-lbl">Warehouse Occupancy</span>
+                            <span class="occupancy-val">${w.occupancy || '0%'}</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: ${occPercent}%"></div>
                         </div>
                     </div>
 
@@ -486,14 +535,16 @@
                 .catch(err => console.error('Error fetching stats:', err));
         }
 
-        // Initial fetch and 20-minute interval
+        // Initial fetch and 1-minute interval for baseline sync
         fetchData();
-        setInterval(fetchData, 20 * 60 * 1000); // 20 minutes in ms
+        setInterval(fetchData, 60 * 1000); 
 
         socket.on('warehouse_status_changed', (data) => {
             if (warehouses[data.id]) {
                 warehouses[data.id].status = data.status;
                 if (data.url) warehouses[data.id].url = data.url;
+                // Update timestamp on status change too
+                warehouses[data.id].last_update = new Date();
                 renderCards();
             }
         });
@@ -502,8 +553,21 @@
             if (warehouses[data.id]) {
                 warehouses[data.id].stats = data.stats;
                 if (data.url) warehouses[data.id].url = data.url;
+                if (data.occupancy) warehouses[data.id].occupancy = data.occupancy;
+                // Crucial: Update the local timestamp when real-time stats arrive
+                warehouses[data.id].last_update = new Date();
                 renderCards();
             }
+        });
+
+        socket.on('occupancy_updated', (data) => {
+            // data is the entire warehouseStats object
+            Object.keys(data).forEach(id => {
+                if (warehouses[id]) {
+                    warehouses[id].occupancy = data[id].occupancy;
+                }
+            });
+            renderCards();
         });
     </script>
 </body>

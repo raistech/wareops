@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel | Warehouse Monitoring CMS</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #004A99;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --danger: #ef4444;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+        }
+        
+        /* Login Overlay */
+        #loginOverlay {
+            position: fixed;
+            top:0; left:0; width: 100%; height: 100%;
+            background: var(--primary);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        .login-box {
+            background: white;
+            padding: 40px;
+            border-radius: 16px;
+            width: 100%;
+            max-width: 400px;
+            color: var(--text);
+            text-align: center;
+        }
+
+        .sidebar {
+            width: 260px;
+            background: var(--primary);
+            height: 100vh;
+            color: white;
+            padding: 30px 20px;
+            position: fixed;
+        }
+        .main-content {
+            margin-left: 260px;
+            padding: 40px;
+            width: calc(100% - 260px);
+        }
+        .nav-item {
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-bottom: 5px;
+            transition: background 0.2s;
+            font-weight: 500;
+        }
+        .nav-item:hover, .nav-item.active {
+            background: rgba(255,255,255,0.1);
+        }
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 8px; font-weight: 600; font-size: 0.85rem; text-transform: uppercase; color: #64748b; }
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            font-family: inherit;
+            box-sizing: border-box;
+        }
+        button {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        button:hover { opacity: 0.9; }
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* Tables/Lists */
+        .list-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .list-item:last-child { border-bottom: none; }
+        .badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+        .badge-active { background: #dcfce7; color: #166534; }
+    </style>
+</head>
+<body>
+    <div id="loginOverlay">
+        <div class="login-box">
+            <h2 style="margin-top:0">Admin Login</h2>
+            <p style="color: #64748b; margin-bottom: 25px;">Enter password to manage CMS</p>
+            <div id="loginControl">
+                <input type="password" id="adminPass" placeholder="Password" style="margin-bottom: 20px;">
+                <button type="button" id="loginBtn" style="width: 100%">Login to Dashboard</button>
+            </div>
+            <p id="loginError" style="color: var(--danger); margin-top: 15px; font-size: 0.85rem; display: none;">Wrong password!</p>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <h2 style="margin-bottom: 40px; font-weight: 800;">W-Ops CMS</h2>
+        <div class="nav-item active" onclick="showSection('blog', this)">Blog Management</div>
+        <div class="nav-item" onclick="showSection('banner', this)">Banner Settings</div>
+        <div class="nav-item" onclick="showSection('system', this)">System Settings</div>
+        <div class="nav-item" onclick="logout()" style="margin-top: 50px; opacity: 0.6;">Logout</div>
+    </div>
+
+    <div class="main-content">
+        <!-- Blog Section -->
+        <div id="section-blog" class="section active">
+            <h1>Blog Articles</h1>
+            <div class="card">
+                <h3>Post New Article</h3>
+                <form id="blogForm">
+                    <div class="form-group">
+                        <label>Title</label>
+                        <input type="text" id="blogTitle" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Content</label>
+                        <textarea id="blogContent" rows="5" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>Cover Image</label>
+                        <input type="file" id="blogImage" accept="image/*">
+                    </div>
+                    <button type="submit">Publish Post</button>
+                </form>
+            </div>
+            <div class="card">
+                <h3>Recent Posts</h3>
+                <div id="blogsContainer"></div>
+            </div>
+        </div>
+
+        <!-- Banner Section -->
+        <div id="section-banner" class="section">
+            <h1>Banner Settings</h1>
+            <div class="card">
+                <h3>Add New Banner</h3>
+                <form id="bannerForm">
+                    <div class="form-group">
+                        <label>Banner Title</label>
+                        <input type="text" id="bannerTitle">
+                    </div>
+                    <div class="form-group">
+                        <label>Link URL</label>
+                        <input type="text" id="bannerLink" placeholder="https://...">
+                    </div>
+                    <div class="form-group">
+                        <label>Banner Image</label>
+                        <input type="file" id="bannerImage" accept="image/*" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Status</label>
+                        <select id="bannerStatus">
+                            <option value="true">Active</option>
+                            <option value="false">Hidden</option>
+                        </select>
+                    </div>
+                    <button type="submit">Save Banner</button>
+                </form>
+            </div>
+            <div class="card">
+                <h3>Current Banners</h3>
+                <div id="bannersContainer"></div>
+            </div>
+        </div>
+
+        <!-- System Section -->
+        <div id="section-system" class="section">
+            <h1>System Settings</h1>
+            <div class="card">
+                <h3>Global Configuration</h3>
+                <form id="settingsForm">
+                    <div class="form-group">
+                        <label>Site Title</label>
+                        <input type="text" id="site_title">
+                    </div>
+                    <div class="form-group">
+                        <label>Occupancy Sync Interval (Minutes)</label>
+                        <input type="number" id="occupancy_sync_interval">
+                    </div>
+                    <button type="submit">Update Settings</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Define functions globally first
+        window.attemptLogin = async function() {
+            const passInput = document.getElementById('adminPass');
+            const pass = passInput.value;
+            console.log('Login triggered');
+            
+            try {
+                const res = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: pass })
+                });
+                const data = await res.json();
+                
+                if (data.success) {
+                    localStorage.setItem('admin_token', data.token);
+                    window.location.reload();
+                } else {
+                    document.getElementById('loginError').innerText = data.error || 'Wrong password!';
+                    document.getElementById('loginError').style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Login error:', err);
+                alert('Connection error. Please try again.');
+            }
+        };
+
+        window.logout = function() {
+            localStorage.removeItem('admin_token');
+            window.location.reload();
+        };
+
+        window.showSection = function(name, el) {
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+            document.getElementById('section-' + name).classList.add('active');
+            if (el) el.classList.add('active');
+        };
+
+        async function initDashboard() {
+            try {
+                await Promise.all([loadBlogs(), loadBanners(), loadSettings()]);
+            } catch (e) {
+                console.error('Init error:', e);
+            }
+        }
+
+        // BLOGS
+        async function loadBlogs() {
+            const res = await fetch('/api/admin/blogs');
+            const data = await res.json();
+            document.getElementById('blogsContainer').innerHTML = data.map(b => `
+                <div class="list-item">
+                    <div>
+                        <strong>${b.title}</strong><br>
+                        <small style="color:#64748b">${new Date(b.created_at).toLocaleDateString()}</small>
+                    </div>
+                    <button onclick="deleteItem('blogs', ${b.id})" style="background:var(--danger); padding:6px 12px; font-size:0.75rem">Delete</button>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('blogForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData();
+            fd.append('title', document.getElementById('blogTitle').value);
+            fd.append('content', document.getElementById('blogContent').value);
+            fd.append('image', document.getElementById('blogImage').files[0]);
+            await fetch('/api/admin/blogs', { method: 'POST', body: fd });
+            e.target.reset();
+            loadBlogs();
+        };
+
+        // BANNERS
+        async function loadBanners() {
+            const res = await fetch('/api/admin/banners');
+            const data = await res.json();
+            document.getElementById('bannersContainer').innerHTML = data.map(b => `
+                <div class="list-item">
+                    <div style="display:flex; align-items:center; gap:15px">
+                        <img src="${b.image_url}" style="width:50px; height:30px; object-fit:cover; border-radius:4px">
+                        <div>
+                            <strong>${b.title || 'No Title'}</strong><br>
+                            <span class="badge ${b.is_active ? 'badge-active' : ''}">${b.is_active ? 'Active' : 'Hidden'}</span>
+                        </div>
+                    </div>
+                    <button onclick="deleteItem('banners', ${b.id})" style="background:var(--danger); padding:6px 12px; font-size:0.75rem">Remove</button>
+                </div>
+            `).join('');
+        }
+
+        document.getElementById('bannerForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const fd = new FormData();
+            fd.append('title', document.getElementById('bannerTitle').value);
+            fd.append('link_url', document.getElementById('bannerLink').value);
+            fd.append('is_active', document.getElementById('bannerStatus').value);
+            fd.append('image', document.getElementById('bannerImage').files[0]);
+            await fetch('/api/admin/banners', { method: 'POST', body: fd });
+            e.target.reset();
+            loadBanners();
+        };
+
+        // SETTINGS
+        async function loadSettings() {
+            const res = await fetch('/api/admin/settings');
+            const data = await res.json();
+            document.getElementById('site_title').value = data.site_title || '';
+            document.getElementById('occupancy_sync_interval').value = data.occupancy_sync_interval || 15;
+        }
+
+        document.getElementById('settingsForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const body = {
+                site_title: document.getElementById('site_title').value,
+                occupancy_sync_interval: document.getElementById('occupancy_sync_interval').value
+            };
+            await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            alert('Settings updated!');
+        };
+
+        async function deleteItem(type, id) {
+            if (confirm('Delete this item?')) {
+                await fetch(`/api/admin/${type}/${id}`, { method: 'DELETE' });
+                type === 'blogs' ? loadBlogs() : loadBanners();
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('loginBtn').addEventListener('click', window.attemptLogin);
+        document.getElementById('adminPass').addEventListener('keyup', (e) => {
+            if (e.key === 'Enter') window.attemptLogin();
+        });
+
+        function checkAuth() {
+            if (localStorage.getItem('admin_token')) {
+                document.getElementById('loginOverlay').style.display = 'none';
+                initDashboard();
+            }
+        }
+
+        checkAuth();
+        </script>
+        </body>
+        </html>
+
