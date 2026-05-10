@@ -29,6 +29,7 @@ export default function AdminPage() {
   const [newBlog, setNewBlog] = useState({ title: '', content: '' });
   const [newEmployee, setNewEmployee] = useState({ name: '', position: '', warehouse_id: 'newgudang', sort_order: 0 });
   const [newBanner, setNewBanner] = useState({ title: '', link_url: '', sort_order: 0 });
+  const [passwords, setPasswords] = useState({ current: '', next: '', confirm: '' });
   const [uploadImage, setUploadImage] = useState(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ type: '', text: '' });
@@ -203,6 +204,30 @@ export default function AdminPage() {
       if (res.ok) showMessage('success', 'Settings saved successfully');
     } catch (err) {
       showMessage('error', 'Failed to save settings');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (passwords.next !== passwords.confirm) return alert('New passwords do not match');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/admin/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentPassword: passwords.current, newPassword: passwords.next })
+      });
+      if (res.ok) {
+        showMessage('success', 'Password updated successfully');
+        setPasswords({ current: '', next: '', confirm: '' });
+      } else {
+        const data = await res.json();
+        alert(data.error || 'Failed to update password');
+      }
+    } catch (err) {
+      alert('Error updating password');
     } finally {
       setLoading(false);
     }
@@ -559,6 +584,34 @@ export default function AdminPage() {
                   Save All Settings
                 </button>
               </form>
+
+              {/* Password Change Section */}
+              <div className="mt-16 pt-10 border-t border-slate-100">
+                <h3 className="text-xl font-bold mb-6 text-red-600 flex items-center gap-2">
+                    <Lock size={20} /> Security & Password
+                </h3>
+                <form onSubmit={handleChangePassword} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-sm font-bold text-slate-600 mb-1 text-left">Current Password</label>
+                            <input type="password" value={passwords.current} onChange={(e) => setPasswords({...passwords, current: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-red-500 text-left" required />
+                        </div>
+                        <div></div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-600 mb-1 text-left">New Password</label>
+                            <input type="password" value={passwords.next} onChange={(e) => setPasswords({...passwords, next: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-red-500 text-left" required />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-bold text-slate-600 mb-1 text-left">Confirm New Password</label>
+                            <input type="password" value={passwords.confirm} onChange={(e) => setPasswords({...passwords, confirm: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-red-500 text-left" required />
+                        </div>
+                    </div>
+                    <button type="submit" className="bg-red-600 text-white px-6 py-3 rounded-lg font-bold hover:bg-red-700 transition-colors flex items-center gap-2 disabled:opacity-50" disabled={loading}>
+                        {loading ? <Loader2 className="animate-spin" size={18} /> : <Lock size={18} />}
+                        Update Password
+                    </button>
+                </form>
+              </div>
             </div>
           </div>
         )}

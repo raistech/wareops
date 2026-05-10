@@ -18,11 +18,30 @@ const upload = multer({ storage });
 // Simple Auth Route
 router.post('/login', (req, res) => {
     const { password } = req.body;
-    if (password === process.env.ADMIN_PASSWORD) {
+    
+    // Check database for custom password first, then fallback to .env
+    const dbPass = db.prepare('SELECT value FROM settings WHERE key = ?').get('admin_password');
+    const actualPassword = dbPass ? dbPass.value : process.env.ADMIN_PASSWORD;
+
+    if (password === actualPassword) {
         res.json({ success: true, token: 'skye-admin-auth-token' });
     } else {
         res.status(401).json({ error: 'Invalid password' });
     }
+});
+
+router.post('/change-password', (req, res) => {
+    const { currentPassword, newPassword } = req.body;
+    
+    const dbPass = db.prepare('SELECT value FROM settings WHERE key = ?').get('admin_password');
+    const actualPassword = dbPass ? dbPass.value : process.env.ADMIN_PASSWORD;
+
+    if (currentPassword !== actualPassword) {
+        return res.status(401).json({ error: 'Current password incorrect' });
+    }
+
+    db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('admin_password', newPassword);
+    res.json({ success: true });
 });
 
 // Blog Routes
