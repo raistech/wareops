@@ -13,6 +13,7 @@ export default function AdminPage() {
   const [siteSettings, setSiteSettings] = useState({
     site_title: 'CP Prima | Monitoring Warehouse',
     site_name: 'Warehouse Ops',
+    company_name: 'CP Prima Logistics',
     site_icon: '',
     hero_title: 'Logistics Control Center',
     hero_description: 'Real-time logistics flow monitoring and warehouse operational efficiency PT. Central Proteina Prima.',
@@ -481,6 +482,10 @@ export default function AdminPage() {
                         <label className="block text-sm font-bold text-slate-600 mb-1">Browser Tab Title</label>
                         <input type="text" value={siteSettings.site_title} onChange={(e) => setSiteSettings({...siteSettings, site_title: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" placeholder="e.g. CP Prima | Monitoring" />
                       </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-bold text-slate-600 mb-1">Company Name (Popups Footer)</label>
+                    <input type="text" value={siteSettings.company_name} onChange={(e) => setSiteSettings({...siteSettings, company_name: e.target.value})} className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-primary-blue" placeholder="e.g. CP Prima Logistics" />
                   </div>
                   <div>
                     <label className="block text-sm font-bold text-slate-600 mb-1">Website Icon (Favicon)</label>

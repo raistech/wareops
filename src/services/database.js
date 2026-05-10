@@ -52,6 +52,7 @@ db.exec(`
 const seedSettings = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
 seedSettings.run('site_title', 'CP Prima | Monitoring Warehouse');
 seedSettings.run('site_name', 'Warehouse Ops');
+seedSettings.run('company_name', 'CP Prima Logistics');
 seedSettings.run('site_icon', '');
 seedSettings.run('occupancy_sync_interval', '15'); // in minutes
 

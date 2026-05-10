@@ -16,6 +16,7 @@ export default function Home() {
   const [siteSettings, setSiteSettings] = useState({
     site_title: 'CP Prima | Monitoring Warehouse',
     site_name: 'Warehouse Ops',
+    company_name: 'CP Prima Logistics',
     site_icon: '',
     hero_title: 'Logistics Control Center',
     hero_description: 'Real-time logistics flow monitoring and warehouse operational efficiency PT. Central Proteina Prima.',
@@ -630,7 +631,7 @@ export default function Home() {
               <div className="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-center gap-3">
                 <Building2 size={20} className="text-slate-400" />
                 <span className="font-bold text-slate-600 uppercase text-sm">
-                    {Object.values(warehouseStats).find(w => w.name.toLowerCase().includes(selectedEmployee.warehouse_id.replace('gudang','').toLowerCase()))?.name || 'CP Prima Logistics'}
+                    {Object.values(warehouseStats).find(w => w.name.toLowerCase().includes(selectedEmployee.warehouse_id.replace('gudang','').toLowerCase()))?.name || siteSettings.company_name}
                 </span>
               </div>
             </div>
