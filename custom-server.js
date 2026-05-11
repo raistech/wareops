@@ -159,9 +159,12 @@ app.prepare().then(() => {
                         const dailyStats = childDb.prepare(`
                             SELECT 
                                 SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
-                                SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today
+                                SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today,
+                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', COALESCE(called_at, processing_at, finished_at)) - strftime('%s', created_at))/60.0 END) as avg_w,
+                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_l,
+                                AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_u
                             FROM queues
-                        `).get(`${date}%`, `${date}%`);
+                        `).get(`${date}%`, `${date}%`, `${date}%`, `${date}%`, `${date}%`);
 
                         // Lifetime stats (up to that date)
                         const lifetimeStats = childDb.prepare(`
@@ -176,7 +179,9 @@ app.prepare().then(() => {
                             finished_bongkar_today: dailyStats.bongkar_today || 0,
                             muat_waiting: 0,
                             bongkar_waiting: 0,
-                            avg_waiting: 0,
+                            avg_waiting: dailyStats.avg_w || 0,
+                            avg_loading: dailyStats.avg_l || 0,
+                            avg_unloading: dailyStats.avg_u || 0,
                         };
 
                         w.lifetime = {

@@ -626,15 +626,15 @@ export default function Home() {
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
                       <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_waiting || 0)}m</span>
-                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Wait (30D)</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Wait {isHistorical ? '(Day)' : '(30D)'}</span>
                     </div>
                     <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
                       <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_loading || 0)}m</span>
-                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Load (30D)</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Load {isHistorical ? '(Day)' : '(30D)'}</span>
                     </div>
                     <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
                       <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_unloading || 0)}m</span>
-                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Unld (30D)</span>
+                      <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Unld {isHistorical ? '(Day)' : '(30D)'}</span>
                     </div>
                   </div>
 
@@ -661,15 +661,27 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="bg-[#f1f5f9] p-4 rounded-xl mb-6 text-left">
+                  <div className={`${
+                    occPercent > 80 ? 'bg-red-50 border border-red-100' : 
+                    occPercent > 50 ? 'bg-amber-50 border border-amber-100' : 
+                    'bg-emerald-50 border border-emerald-100'
+                  } p-4 rounded-xl mb-6 text-left transition-colors duration-500`}>
                     <div className="flex justify-between items-center mb-2">
-                        <span className="text-[0.7rem] font-bold uppercase">Occupancy</span>
-                        <span className="text-[0.75rem] font-extrabold text-[#004A99]">{w.occupancy || '0%'}</span>
+                        <span className="text-[0.7rem] font-bold uppercase text-slate-600">Occupancy</span>
+                        <span className={`text-[0.75rem] font-black ${
+                          occPercent > 80 ? 'text-red-600' : 
+                          occPercent > 50 ? 'text-amber-600' : 
+                          'text-emerald-600'
+                        }`}>{w.occupancy || '0%'}</span>
                     </div>
-                    <div className="h-1.5 bg-[#e2e8f0] rounded-full overflow-hidden mb-2">
-                        <div className="h-full bg-gradient-to-r from-[#3b82f6] to-[#2563eb] transition-all duration-500" style={{ width: `${occPercent}%` }}></div>
+                    <div className="h-1.5 bg-slate-200/50 rounded-full overflow-hidden mb-2">
+                        <div className={`h-full ${
+                          occPercent > 80 ? 'bg-red-500' : 
+                          occPercent > 50 ? 'bg-amber-500' : 
+                          'bg-emerald-500'
+                        } transition-all duration-500`} style={{ width: `${occPercent}%` }}></div>
                     </div>
-                    <div className="flex justify-between text-[0.65rem] text-slate-500 font-medium">
+                    <div className="flex justify-between text-[0.65rem] text-slate-500 font-bold">
                         <span>Act: {w.actual || '0'}</span>
                         <span>Cap: {w.capacity || '0'}</span>
                     </div>
