@@ -49,5 +49,10 @@ Dokumen ini mencatat seluruh proses migrasi dan fitur-fitur yang diimplementasik
 - **Pre-fetching Data:** Mempercepat loading awal dashboard dengan mengambil data terbaru dari database anak gudang sebelum update socket pertama kali.
 - **Unified Summary:** Pemisahan tampilan antara pencapaian harian (Day) dan akumulasi seumur hidup (Total) pada grid dan ringkasan global.
 
+### 📈 4. Perbaikan Akurasi Histori & Visualisasi
+- **Enhanced Durations:** Memperbaiki perhitungan rata-rata waktu tunggu (*Wait*), muat (*Load*), dan bongkar (*Unload*) pada mode histori dengan sistem *fallback* (menggunakan `processing_at` jika `called_at` kosong).
+- **Dynamic Occupancy Styling:** Implementasi indikator warna dinamis pada kartu okupansi (Merah > 80%, Kuning > 50%, Hijau < 50%) untuk mempermudah monitoring kapasitas gudang.
+- **Contextual Labels:** Menambahkan label otomatis **(Day)** pada metrik waktu saat filter tanggal diaktifkan untuk membedakan dengan data rata-rata 30 hari **(30D)**.
+
 ---
 *Dokumentasi ini dibuat otomatis sebagai riwayat pengembangan proyek raistech/wareops.*
