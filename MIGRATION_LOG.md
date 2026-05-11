@@ -33,5 +33,21 @@ Dokumen ini mencatat seluruh proses migrasi dan fitur-fitur yang diimplementasik
 - **Data Accuracy:** Memperbaiki logika pembacaan GSheets agar data antar gudang tidak tertukar.
 - **Robust Data Handling:** Menambahkan *safety checks* di frontend agar web tidak crash saat data server sedang dimuat.
 
+## 📅 Tanggal: 11 Mei 2026
+
+### 🔍 1. Sistem Filter Tanggal (Historical View)
+- **Multi-source Sync:** Implementasi pencarian data harian dan akumulasi total berdasarkan tanggal yang dipilih.
+- **Direct DB Access:** Mengoptimalkan pengambilan data statistik dengan membaca langsung database SQLite masing-masing gudang untuk akurasi data lampau.
+- **UI Contextual:** Dashboard otomatis berubah ke mode "Historical" dengan indikator khusus saat melihat data selain hari ini.
+
+### ⭐ 2. Review & Rating System
+- **Per-Warehouse Feedback:** Menambahkan fitur rating (1-5 bintang) dan komentar untuk setiap kartu gudang.
+- **Average Aggregation:** Menampilkan akumulasi rata-rata rating dan jumlah ulasan di dashboard utama.
+- **Admin Moderation:** Halaman pengelolaan ulasan di Admin Panel untuk menghapus review yang dianggap tidak layak atau spam.
+
+### 🚀 3. Optimasi Backend & Performa
+- **Pre-fetching Data:** Mempercepat loading awal dashboard dengan mengambil data terbaru dari database anak gudang sebelum update socket pertama kali.
+- **Unified Summary:** Pemisahan tampilan antara pencapaian harian (Day) dan akumulasi seumur hidup (Total) pada grid dan ringkasan global.
+
 ---
 *Dokumentasi ini dibuat otomatis sebagai riwayat pengembangan proyek raistech/wareops.*
