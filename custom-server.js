@@ -8,8 +8,6 @@ const path = require('path');
 const Database = require('better-sqlite3');
 const axios = require('axios');
 require('dotenv').config();
-
-// Child database mapping
 const childDatabases = {
     'newgudang': '/root/newgudang/database/waru.db',
     'gudangkletek': '/root/gudangkletek/database/kletek.db',
@@ -18,20 +16,14 @@ const childDatabases = {
     'gudangrm3': '/root/gudangrm3/database/gudangrawmaterialsumberasia.db',
     'gudangrm4': '/root/gudangrm4/database/gudangrawmaterialkemasan.db'
 };
-
-// Services & Routes
 const googleSheets = require('./src/services/googleSheets');
 const adminRoutes = require('./src/routes/admin');
 const db = require('./src/services/database');
-
 const dev = process.env.NODE_ENV !== 'production';
 const app = next({ dev });
 const handle = app.getRequestHandler();
-
 const PORT = process.env.PORT || 23670;
 const AUTH_TOKEN = process.env.AUTH_TOKEN;
-
-// Store latest stats for each warehouse
 const warehouseStats = {
     'newgudang': { name: 'Gudang Waru', status: 'offline', stats: null, url: 'https://gudangwaru.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
     'gudangkletek': { name: 'Gudang Kletek', status: 'offline', stats: null, url: 'https://gudangkletek.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
@@ -41,7 +33,7 @@ const warehouseStats = {
     'gudangrm4': { name: 'RM Kemasan', status: 'offline', stats: null, url: 'https://gudangkemasan.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
     'gudangpabrik': { name: 'RM Pabrik', status: 'offline', stats: null, url: '#', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
 };
-
+let unregisteredWarehouses = {};
 app.prepare().then(() => {
     const server = express();
     const httpServer = createServer(server);
@@ -51,28 +43,18 @@ app.prepare().then(() => {
             methods: ["GET", "POST"]
         }
     });
-
     server.use(cors());
     server.use(express.json());
-    
-    // Serve static uploads
     server.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
-
-    // API Routes (Legacy/Admin)
     server.use('/api/admin', adminRoutes);
-    
     server.get('/api/stats', (req, res) => {
         try {
             const results = JSON.parse(JSON.stringify(warehouseStats));
             const today = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
-            
-            // Add ratings and current stats from DB
             Object.keys(results).forEach(id => {
                 const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
                 results[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
                 results[id].total_reviews = ratingData.total_reviews || 0;
-
-                // Pre-fetch today's stats if local DB exists
                 if (childDatabases[id]) {
                     try {
                         const childDb = new Database(childDatabases[id], { readonly: true });
@@ -87,14 +69,12 @@ app.prepare().then(() => {
                                 AVG(CASE WHEN created_at >= date('now', '-30 days') THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w
                             FROM queues
                         `).get(`${today}%`, `${today}%`);
-
                         if (!results[id].stats) results[id].stats = {};
                         results[id].stats.muat_waiting = data.muat_q || 0;
                         results[id].stats.bongkar_waiting = data.bongkar_q || 0;
                         results[id].stats.finished_muat_today = data.muat_today || 0;
                         results[id].stats.finished_bongkar_today = data.bongkar_today || 0;
                         results[id].stats.avg_waiting = data.avg_w || 0;
-                        
                         results[id].lifetime = {
                             loading: data.muat_lifetime || 0,
                             unloading: data.bongkar_lifetime || 0
@@ -105,37 +85,28 @@ app.prepare().then(() => {
                     }
                 }
             });
-            
-            res.json(results);
+            res.json({ registered: results, unregistered: unregisteredWarehouses });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
     });
-
     server.get('/api/historical-stats', async (req, res) => {
-        const { date } = req.query; // YYYY-MM-DD
+        const { date } = req.query; 
         if (!date) return res.status(400).json({ error: 'Date is required' });
-
         console.log(`[API] Fetching historical stats for: ${date}`);
-
         try {
             const occupancyData = await googleSheets.getOccupancyData(date);
-            const results = JSON.parse(JSON.stringify(warehouseStats)); // Deep clone
-
+            const results = JSON.parse(JSON.stringify(warehouseStats)); 
+            const unregistered = {};
             const fetchPromises = Object.keys(results).map(async (id) => {
                 const w = results[id];
-                
-                // Add ratings
                 const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
                 w.avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
                 w.total_reviews = ratingData.total_reviews || 0;
-
-                // Update occupancy from sheets
                 const nameInStats = w.name;
                 const matchKey = Object.keys(occupancyData).find(key => 
                     key.toLowerCase().trim() === nameInStats.toLowerCase().trim()
                 );
-                
                 if (matchKey) {
                     const data = occupancyData[matchKey];
                     w.occupancy = data.occupancy;
@@ -146,16 +117,10 @@ app.prepare().then(() => {
                     w.capacity = '0';
                     w.actual = '0';
                 }
-
-                // Reset real-time status for historical view
                 w.status = 'historical';
-
-                // Direct DB Query if mapping exists
                 if (childDatabases[id]) {
                     try {
                         const childDb = new Database(childDatabases[id], { readonly: true });
-                        
-                        // Daily stats
                         const dailyStats = childDb.prepare(`
                             SELECT 
                                 SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
@@ -165,15 +130,12 @@ app.prepare().then(() => {
                                 AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_u
                             FROM queues
                         `).get(`${date}%`, `${date}%`, `${date}%`, `${date}%`, `${date}%`);
-
-                        // Lifetime stats (up to that date)
                         const lifetimeStats = childDb.prepare(`
                             SELECT 
                                 SUM(CASE WHEN type='M' AND status='finished' AND created_at <= ? THEN 1 ELSE 0 END) as muat_lifetime,
                                 SUM(CASE WHEN type='B' AND status='finished' AND created_at <= ? THEN 1 ELSE 0 END) as bongkar_lifetime
                             FROM queues
                         `).get(`${date} 23:59:59`, `${date} 23:59:59`);
-
                         w.stats = {
                             finished_muat_today: dailyStats.muat_today || 0,
                             finished_bongkar_today: dailyStats.bongkar_today || 0,
@@ -183,19 +145,16 @@ app.prepare().then(() => {
                             avg_loading: dailyStats.avg_l || 0,
                             avg_unloading: dailyStats.avg_u || 0,
                         };
-
                         w.lifetime = {
                             loading: lifetimeStats.muat_lifetime || 0,
                             unloading: lifetimeStats.bongkar_lifetime || 0
                         };
-
                         childDb.close();
                         console.log(`[API] DB stats fetched for ${id}`);
                     } catch (err) {
                         console.error(`Error querying child DB for ${id}:`, err.message);
                     }
                 } else if (w.url && w.url !== '#') {
-                    // Fallback to API if not a local DB
                     try {
                         const apiUrl = `${w.url.replace(/\/$/, '')}/api/history-data?date=${date}`;
                         console.log(`[API] Fetching child stats via fallback API: ${apiUrl}`);
@@ -215,16 +174,24 @@ app.prepare().then(() => {
                     }
                 }
             });
-
+            Object.keys(occupancyData).forEach(name => {
+                const isRegistered = Object.values(warehouseStats).some(w => w.name.toLowerCase().trim() === name.toLowerCase().trim());
+                if (!isRegistered && name.toLowerCase().trim() !== 'rm pabrik') {
+                    unregistered[name] = {
+                        name: name,
+                        ...occupancyData[name],
+                        status: 'historical',
+                        isUnregistered: true
+                    };
+                }
+            });
             await Promise.all(fetchPromises);
-            res.json(results);
+            res.json({ registered: results, unregistered });
         } catch (err) {
             console.error('Historical stats error:', err);
             res.status(500).json({ error: 'Failed to fetch historical stats' });
         }
     });
-
-    // Review Routes
     server.get('/api/reviews/:warehouse_id', (req, res) => {
         try {
             const reviews = db.prepare('SELECT * FROM reviews WHERE warehouse_id = ? ORDER BY created_at DESC').all(req.params.warehouse_id);
@@ -233,32 +200,36 @@ app.prepare().then(() => {
             res.status(500).json({ error: err.message });
         }
     });
-
     server.post('/api/reviews', (req, res) => {
         const { warehouse_id, rating, comment, reviewer_name } = req.body;
         if (!warehouse_id || !rating) return res.status(400).json({ error: 'Warehouse ID and Rating are required' });
-        
         try {
             const stmt = db.prepare('INSERT INTO reviews (warehouse_id, rating, comment, reviewer_name) VALUES (?, ?, ?, ?)');
             const info = stmt.run(warehouse_id, rating, comment || '', reviewer_name || 'Anonymous');
+            if (warehouseStats[warehouse_id]) {
+                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(warehouse_id);
+                warehouseStats[warehouse_id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
+                warehouseStats[warehouse_id].total_reviews = ratingData.total_reviews || 0;
+                io.emit('stats_updated', { 
+                    id: warehouse_id, 
+                    ...warehouseStats[warehouse_id]
+                });
+            }
             res.json({ success: true, id: info.lastInsertRowid });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
     });
-
-    // Sync occupancy from Google Sheets
     const syncOccupancy = async () => {
         console.log('[SYNC] Fetching occupancy from Google Sheets...');
         try {
             const occupancyData = await googleSheets.getOccupancyData();
-            
+            const unregistered = {};
             Object.keys(warehouseStats).forEach(id => {
                 const nameInStats = warehouseStats[id].name;
                 const matchKey = Object.keys(occupancyData).find(key => 
                     key.toLowerCase().trim() === nameInStats.toLowerCase().trim()
                 );
-
                 if (matchKey) {
                     const data = occupancyData[matchKey];
                     warehouseStats[id].occupancy = data.occupancy;
@@ -268,51 +239,61 @@ app.prepare().then(() => {
                 } else {
                     console.log(`[SYNC] No match for ${id} (${nameInStats}) in sheets`);
                 }
+                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
+                warehouseStats[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
+                warehouseStats[id].total_reviews = ratingData.total_reviews || 0;
             });
-
-            io.emit('occupancy_updated', warehouseStats);
+            unregisteredWarehouses = {};
+            Object.keys(occupancyData).forEach(name => {
+                const isRegistered = Object.values(warehouseStats).some(w => w.name.toLowerCase().trim() === name.toLowerCase().trim());
+                if (!isRegistered) {
+                    unregisteredWarehouses[name] = {
+                        name: name,
+                        ...occupancyData[name],
+                        status: 'offline',
+                        isUnregistered: true
+                    };
+                }
+            });
+            io.emit('occupancy_updated', { registered: warehouseStats, unregistered: unregisteredWarehouses });
         } catch (err) {
             console.error('[SYNC ERROR]', err);
         }
     };
-
-    // Initial sync and interval (1 minute)
     syncOccupancy();
     setInterval(syncOccupancy, 60 * 1000);
-
-    // Socket.io logic
     io.on('connection', (socket) => {
         socket.on('register_warehouse', (data) => {
             const { id, token } = data;
             if (token !== AUTH_TOKEN) return socket.disconnect();
-
             if (warehouseStats[id]) {
                 socket.join('warehouses');
                 socket.warehouseId = id;
                 warehouseStats[id].status = 'online';
+                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
+                warehouseStats[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
+                warehouseStats[id].total_reviews = ratingData.total_reviews || 0;
                 io.emit('warehouse_status_changed', { id, ...warehouseStats[id] });
                 console.log(`Warehouse Registered: ${id}`);
             }
         });
-
         socket.on('update_stats', (stats) => {
             if (socket.warehouseId && warehouseStats[socket.warehouseId]) {
-                // Directly use lifetime stats from client
                 warehouseStats[socket.warehouseId].lifetime = {
                     loading: stats.finished_muat_lifetime || 0,
                     unloading: stats.finished_bongkar_lifetime || 0
                 };
-
                 warehouseStats[socket.warehouseId].stats = stats;
                 warehouseStats[socket.warehouseId].last_update = new Date();
-                
+                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(socket.warehouseId);
+                warehouseStats[socket.warehouseId].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
+                warehouseStats[socket.warehouseId].total_reviews = ratingData.total_reviews || 0;
                 io.emit('stats_updated', { 
                     id: socket.warehouseId, 
                     ...warehouseStats[socket.warehouseId]
                 });
             }
         });
-
         socket.on('disconnect', () => {
             if (socket.warehouseId && warehouseStats[socket.warehouseId]) {
                 warehouseStats[socket.warehouseId].status = 'offline';
@@ -320,13 +301,10 @@ app.prepare().then(() => {
             }
         });
     });
-
-    // Next.js handler
     server.use((req, res) => {
         const parsedUrl = parse(req.url, true);
         handle(req, res, parsedUrl);
     });
-
     httpServer.listen(PORT, (err) => {
         if (err) throw err;
         console.log(`> Ready on http://localhost:${PORT}`);

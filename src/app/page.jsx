@@ -1,11 +1,10 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
 import { Database, Clock, Building2, Truck, CheckCircle2, Timer, ExternalLink, Newspaper, X, Layers, TrendingUp, Users, ChevronLeft, ChevronRight, Menu, Calendar, Loader2, Star, MessageSquare } from 'lucide-react';
-
 export default function Home() {
   const [warehouseStats, setWarehouseStats] = useState({});
+  const [unregisteredStats, setUnregisteredStats] = useState({});
   const [blogs, setBlogs] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [banners, setBanners] = useState([]);
@@ -22,7 +21,6 @@ export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isHistorical, setIsHistorical] = useState(false);
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
-  
   const [siteSettings, setSiteSettings] = useState({
     site_title: 'CP Prima | Monitoring Warehouse',
     site_name: 'Warehouse Ops',
@@ -37,7 +35,6 @@ export default function Home() {
     monitoring_title: 'Warehouse Overview',
     monitoring_description: 'Detailed real-time monitoring for each warehouse unit.'
   });
-
   const [summary, setSummary] = useState({
   activeWarehouses: 0,
   totalQueues: 0,
@@ -50,14 +47,14 @@ export default function Home() {
   totalActual: 0,
   totalOccupancy: 0
   });
-
   const parseNum = (str) => {
   if (!str) return 0;
   return parseFloat(str.toString().replace(/,/g, '')) || 0;
   };
-
   const calculateSummary = (data, historical = false) => {
-    if (!data) return;
+    const registeredData = data.registered || {};
+    const unregisteredData = data.unregistered || {};
+    if (!registeredData && !unregisteredData) return;
     let queues = 0;
     let finishedLoading = 0;
     let finishedUnloading = 0;
@@ -68,32 +65,28 @@ export default function Home() {
     let count = 0;
     let capacity = 0;
     let actual = 0;
-
-    Object.values(data).forEach(w => {
+    Object.values(registeredData).forEach(w => {
       if (!w) return;
       const stats = w.stats || {};
-
-      // Active logic: online in real-time OR had activity in historical
       if (historical) {
           if ((stats.finished_muat_today || 0) > 0 || (stats.finished_bongkar_today || 0) > 0) active++;
       } else {
           if (w.status === 'online') active++;
       }
-
       queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
-
       finishedLoading += (stats.finished_muat_today || 0);
       finishedUnloading += (stats.finished_bongkar_today || 0);
-
       lifetimeLoading += (w.lifetime?.loading || 0);
       lifetimeUnloading += (w.lifetime?.unloading || 0);
-
       if (stats.avg_waiting > 0) { processTime += stats.avg_waiting; count++; }
-      // Note: avg_loading and avg_unloading are also available if needed
       capacity += parseNum(w.capacity);
       actual += parseNum(w.actual);
     });
-
+    Object.values(unregisteredData).forEach(w => {
+        if (!w) return;
+        capacity += parseNum(w.capacity);
+        actual += parseNum(w.actual);
+    });
     setSummary({
       activeWarehouses: active,
       totalQueues: queues,
@@ -112,7 +105,8 @@ export default function Home() {
       try {
         const res = await fetch(`/api/historical-stats?date=${date}`);
         const data = await res.json();
-        setWarehouseStats(data);
+        setWarehouseStats(data.registered || {});
+        setUnregisteredStats(data.unregistered || {});
         calculateSummary(data, true);
         setLastRefreshed(new Date());
       } catch (err) {
@@ -121,7 +115,6 @@ export default function Home() {
         setIsFetchingHistory(false);
       }
     };
-
     const fetchReviews = async (warehouseId) => {
         try {
             const res = await fetch(`/api/reviews/${warehouseId}`);
@@ -131,7 +124,6 @@ export default function Home() {
             console.error('Fetch reviews error:', err);
         }
     };
-
     const handleReviewSubmit = async (e) => {
         e.preventDefault();
         if (!selectedWarehouseForReview) return;
@@ -156,7 +148,6 @@ export default function Home() {
             setIsSubmittingReview(false);
         }
     };
-
     useEffect(() => {
         const today = new Date().toISOString().split('T')[0];
         if (selectedDate !== today) {
@@ -168,18 +159,16 @@ export default function Home() {
                 .then(res => res.json())
                 .then(data => {
                     if (data) {
-                        setWarehouseStats(data);
+                        setWarehouseStats(data.registered || {});
+                        setUnregisteredStats(data.unregistered || {});
                         calculateSummary(data, false);
                     }
                 })
                 .catch(err => console.error('Stats fetch error:', err));
         }
     }, [selectedDate]);
-
     useEffect(() => {
     const socket = io();
-
-    // Fetch site settings
     fetch('/api/admin/settings')
       .then(res => res.json())
       .then(data => {
@@ -198,31 +187,24 @@ export default function Home() {
         }
       })
       .catch(err => console.error('Settings fetch error:', err));
-
-    // Fetch blogs
     fetch('/api/admin/blogs')
       .then(res => res.json())
       .then(data => {
           if (Array.isArray(data)) setBlogs(data.slice(0, 3));
       })
       .catch(err => console.error('Blogs fetch error:', err));
-
-    // Fetch employees
     fetch('/api/admin/employees')
       .then(res => res.json())
       .then(data => {
           if (Array.isArray(data)) setEmployees(data);
       })
       .catch(err => console.error('Employees fetch error:', err));
-
-    // Fetch banners
     fetch('/api/admin/banners')
         .then(res => res.json())
         .then(data => {
             if (Array.isArray(data)) setBanners(data);
         })
         .catch(err => console.error('Banners fetch error:', err));
-
     socket.on('stats_updated', (data) => {
       if (!data || !data.id || isHistorical) return;
       setWarehouseStats(prev => {
@@ -238,7 +220,6 @@ export default function Home() {
         return newState;
       });
     });
-
     socket.on('warehouse_status_changed', (data) => {
       if (!data || !data.id || isHistorical) return;
       setWarehouseStats(prev => {
@@ -254,18 +235,15 @@ export default function Home() {
         return newState;
       });
     });
-
     socket.on('occupancy_updated', (data) => {
       if (!data || isHistorical) return;
-      setWarehouseStats(data);
+      setWarehouseStats(data.registered || {});
+      setUnregisteredStats(data.unregistered || {});
       calculateSummary(data, false);
       setLastRefreshed(new Date());
     });
-
     return () => socket.close();
   }, [isHistorical]);
-
-  // Banner Auto-slide
   useEffect(() => {
     if (banners.length <= 1) return;
     const interval = setInterval(() => {
@@ -273,7 +251,6 @@ export default function Home() {
     }, 5000);
     return () => clearInterval(interval);
   }, [banners]);
-
   const getOccupancyPercent = (occ) => {
     if (!occ) return 0;
     const match = occ.toString().match(/(\d+\.?\d*)%/);
@@ -285,16 +262,13 @@ export default function Home() {
     }
     return 0;
   };
-
   const formatKg = (num) => {
       if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M kg';
       if (num >= 1000) return (num / 1000).toFixed(1) + 'k kg';
       return num + ' kg';
   };
-
   return (
     <div className="min-h-screen bg-[#f8fafc] font-sans text-[#0f172a]">
-      {/* Navbar */}
       <nav className="sticky top-0 bg-white/95 backdrop-blur-md z-[100] border-b border-[#e2e8f0] px-[5%] py-4 flex justify-between items-center">
         <a href="/" className="flex items-center gap-2 text-[#004A99] font-extrabold text-2xl no-underline">
           {siteSettings.site_name.split(' ').map((word, i) => (
@@ -302,23 +276,17 @@ export default function Home() {
           ))}
           {siteSettings.site_name.split(' ').length === 1 && <span>&nbsp;</span>}
         </a>
-        
-        {/* Desktop Menu */}
         <div className="hidden md:flex gap-8">
             <a href="#summary" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Summary</a>
             <a href="#news" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">News</a>
             <a href="#monitoring" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Monitoring</a>
         </div>
-
-        {/* Mobile Hamburger Button */}
         <button 
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             className="md:hidden p-2 text-[#0f172a] hover:bg-slate-100 rounded-lg transition-colors"
         >
             {isMobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
         </button>
-
-        {/* Mobile Menu Dropdown */}
         {isMobileMenuOpen && (
             <div className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-xl flex flex-col p-6 gap-6 md:hidden animate-in slide-in-from-top duration-300">
                 <a href="#summary" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">Summary</a>
@@ -327,8 +295,6 @@ export default function Home() {
             </div>
         )}
       </nav>
-
-      {/* Hero */}
       <section className="pt-24 pb-10 px-[5%] bg-gradient-to-br from-[#f0f9ff] to-[#e0f2fe] text-center relative overflow-hidden">
         <h1 className="text-5xl md:text-6xl font-extrabold mb-6 leading-[1.1] bg-gradient-to-r from-[#004A99] to-[#E30613] bg-clip-text text-transparent">
           {siteSettings.hero_title}
@@ -342,13 +308,10 @@ export default function Home() {
             </a>
         </div>
       </section>
-
-      {/* Banners Section */}
       {banners.length > 0 && (
           <section className="px-[5%] pb-24 bg-gradient-to-b from-[#f0f9ff] to-[#f1f5f9]">
               <div className="max-w-[1400px] mx-auto relative group">
                   <div className="relative aspect-[21/9] md:aspect-[25/8] w-full overflow-hidden rounded-[40px] shadow-2xl border-4 border-white bg-white">
-                      {/* Sliding Container */}
                       <div 
                         className="absolute inset-0 flex transition-transform duration-700 ease-in-out" 
                         style={{ transform: `translateX(-${currentBanner * 100}%)` }}
@@ -369,8 +332,6 @@ export default function Home() {
                           ))}
                       </div>
                   </div>
-
-                  {/* Banner Controls */}
                   {banners.length > 1 && (
                       <>
                           <button 
@@ -399,8 +360,6 @@ export default function Home() {
               </div>
           </section>
       )}
-
-      {/* Global Summary Section */}
       <section id="summary" className="py-24 px-[5%] bg-[#f1f5f9] rounded-t-[50px] -mt-12 relative z-10">
         <div className="max-w-[1400px] mx-auto flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-4">
             <div className="text-left">
@@ -424,8 +383,6 @@ export default function Home() {
                 </div>
             </div>
         </div>
-
-        {/* Global Summary Card */}
         <div className="max-w-[1400px] mx-auto bg-white rounded-[32px] p-8 shadow-sm border border-[#e2e8f0] mb-12 overflow-hidden relative">
             <div className="absolute top-0 right-0 p-10 opacity-5 pointer-events-none">
                 <Layers size={120} />
@@ -443,7 +400,6 @@ export default function Home() {
                         <TrendingUp size={16} /> All Systems Normal
                     </div>
                 </div>
-                
                 <div className="space-y-6 text-left">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <Truck size={16} /> Activity Status
@@ -473,7 +429,6 @@ export default function Home() {
                         <span className="text-[0.65rem] text-slate-400 ml-2 uppercase tracking-tighter">In Current Queue</span>
                     </div>
                 </div>
-
                 <div className="space-y-6 text-left">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <Timer size={16} /> 30-Day Avg. Performance
@@ -481,7 +436,6 @@ export default function Home() {
                     <div className="text-4xl font-black text-[#0f172a]">{summary.avgProcessTime} <span className="text-xl font-bold text-slate-400">Min</span></div>
                     <p className="text-xs text-slate-500 leading-relaxed">Average processing time for loading and unloading across all units in the last 30 days.</p>
                 </div>
-
                 <div className="space-y-6 text-left">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
                         <Database size={16} /> Global Occupancy
@@ -500,8 +454,6 @@ export default function Home() {
             </div>
         </div>
       </section>
-
-      {/* News Section */}
       <section id="news" className="py-24 px-[5%] bg-white relative z-10 border-y border-slate-100">
         <div className="max-w-[1400px] mx-auto">
           <div className="flex justify-between items-end mb-10 text-left">
@@ -510,7 +462,6 @@ export default function Home() {
               <p className="text-[#64748b] text-lg">{siteSettings.news_description}</p>
             </div>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {blogs.length === 0 ? (
               <p className="text-slate-400 italic col-span-3 text-center py-10">No articles published yet.</p>
@@ -549,15 +500,12 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      {/* Monitoring Section Header */}
       <section id="monitoring" className="pt-24 px-[5%] bg-[#f8fafc]">
         <div className="max-w-[1400px] mx-auto mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="text-left">
                 <h2 className="text-3xl font-bold m-0">{siteSettings.monitoring_title}</h2>
                 <p className="text-[#64748b] mt-2 text-lg">{siteSettings.monitoring_description}</p>
             </div>
-            
             <div className="flex items-center gap-4 bg-white p-2.5 pl-5 rounded-2xl shadow-sm border border-slate-200 min-w-[300px]">
                 <div className="flex items-center gap-3 text-slate-400">
                     <Calendar size={20} />
@@ -576,15 +524,12 @@ export default function Home() {
                 )}
             </div>
         </div>
-
-        {/* Warehouse Grid */}
         <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
             {Object.entries(warehouseStats).map(([id, w]) => {
               if (!w) return null;
               const stats = w.stats || {};
               const isOnline = w.status === 'online';
               const occPercent = getOccupancyPercent(w.occupancy);
-              
               return (
                 <div key={id} className="bg-white rounded-[20px] p-6 shadow-sm border border-[#f1f5f9] hover:-translate-y-1.5 hover:shadow-xl transition-all flex flex-col text-left">
                   <div className="flex justify-between items-center mb-5">
@@ -611,7 +556,6 @@ export default function Home() {
                       {w.status}
                     </div>
                   </div>
-
                   <div className="flex gap-3 mb-5">
                     <div className="flex-1 p-4 rounded-2xl text-center bg-[#eff6ff] border border-[#dbeafe]">
                       <span className="block text-3xl font-black text-[#3b82f6] leading-none mb-1">{stats.muat_waiting || 0}</span>
@@ -622,7 +566,6 @@ export default function Home() {
                       <span className="text-[0.7rem] font-bold text-[#64748b] uppercase tracking-tighter">{isHistorical ? 'Remaining Q' : 'Unloading Queue'}</span>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-3 gap-2 mb-4">
                     <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
                       <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_waiting || 0)}m</span>
@@ -637,7 +580,6 @@ export default function Home() {
                       <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Unld {isHistorical ? '(Day)' : '(30D)'}</span>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="text-left p-3.5 bg-[#eff6ff] rounded-2xl border border-blue-50">
                         <div className="flex justify-between items-end mb-1">
@@ -660,7 +602,6 @@ export default function Home() {
                         </div>
                     </div>
                   </div>
-
                   <div className={`${
                     occPercent > 80 ? 'bg-red-50 border border-red-100' : 
                     occPercent > 50 ? 'bg-amber-50 border border-amber-100' : 
@@ -686,7 +627,6 @@ export default function Home() {
                         <span>Cap: {w.capacity || '0'}</span>
                     </div>
                   </div>
-
                   <div className="flex gap-2 mt-auto">
                     <button 
                         onClick={() => {
@@ -701,12 +641,9 @@ export default function Home() {
                         Visit Queue <ExternalLink size={14} className="ml-2" />
                     </a>
                   </div>
-                  
                   <div className="mt-2.5 text-[0.65rem] text-[#64748b] flex items-center gap-1">
                     <Clock size={12} /> Active: {w.last_update ? new Date(w.last_update).toLocaleTimeString() : 'N/A'}
                   </div>
-
-                  {/* Employee / Org Structure Preview */}
                   {Array.isArray(employees) && employees.filter(emp => emp.warehouse_id === id).length > 0 && (
                     <div className="mt-6 pt-6 border-t border-slate-100">
                         <h4 className="text-[0.65rem] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-1 justify-start">
@@ -743,13 +680,58 @@ export default function Home() {
               );
             })}
         </div>
+        {Object.keys(unregisteredStats).length > 0 && (
+            <div className="max-w-[1400px] mx-auto mb-10 text-left">
+                <div className="flex items-center gap-3 mb-8">
+                    <div className="w-1.5 h-8 bg-[#E30613] rounded-full"></div>
+                    <div>
+                        <h3 className="text-xl font-black text-slate-800 m-0">Other Storage Units</h3>
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Occupancy Tracking Only</p>
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-24">
+                    {Object.values(unregisteredStats).map((w, idx) => {
+                        const occPercent = getOccupancyPercent(w.occupancy);
+                        return (
+                            <div key={idx} className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col hover:shadow-md transition-shadow">
+                                <h4 className="text-sm font-black text-slate-900 mb-4">{w.name}</h4>
+                                <div className="space-y-4">
+                                    <div className="flex justify-between items-end">
+                                        <span className="text-xs font-bold text-slate-400 uppercase">Occupancy</span>
+                                        <span className={`text-lg font-black ${occPercent > 90 ? 'text-[#E30613]' : 'text-[#004A99]'}`}>
+                                            {w.occupancy}
+                                        </span>
+                                    </div>
+                                    <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                                        <div 
+                                            className={`h-full rounded-full transition-all duration-1000 ${
+                                                occPercent > 90 ? 'bg-[#E30613]' : 
+                                                occPercent > 70 ? 'bg-orange-500' : 'bg-[#004A99]'
+                                            }`}
+                                            style={{ width: `${occPercent}%` }}
+                                        ></div>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 pt-2">
+                                        <div className="text-left">
+                                            <span className="block text-[0.6rem] font-bold text-slate-400 uppercase">Actual</span>
+                                            <span className="text-xs font-bold text-slate-700">{w.actual}</span>
+                                        </div>
+                                        <div className="text-right">
+                                            <span className="block text-[0.6rem] font-bold text-slate-400 uppercase">Capacity</span>
+                                            <span className="text-xs font-bold text-slate-700">{w.capacity}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+         )}
       </section>
-
-      {/* Article Modal */}
       {selectedBlog && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white rounded-[32px] w-full max-w-3xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
-            {/* Modal Header */}
             <div className="relative h-64 md:h-80 flex-shrink-0 text-left">
               {selectedBlog.image_url ? (
                 <img src={selectedBlog.image_url} alt={selectedBlog.title} className="w-full h-full object-cover" />
@@ -765,8 +747,6 @@ export default function Home() {
                 <X size={24} />
               </button>
             </div>
-            
-            {/* Modal Body */}
             <div className="p-8 md:p-12 overflow-y-auto text-left">
               <div className="text-sm font-bold text-[#E30613] uppercase mb-4 tracking-widest text-left">
                 {new Date(selectedBlog.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -778,8 +758,6 @@ export default function Home() {
                 {selectedBlog.content}
               </div>
             </div>
-            
-            {/* Modal Footer */}
             <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
               <button 
                 onClick={() => setSelectedBlog(null)}
@@ -791,8 +769,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* Employee Modal */}
       {selectedEmployee && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
           <div className="bg-white rounded-[40px] w-full max-w-lg overflow-hidden flex flex-col shadow-2xl animate-in zoom-in duration-300 text-left">
@@ -803,7 +779,6 @@ export default function Home() {
               >
                 <X size={20} />
               </button>
-              
               <div className="w-48 h-48 rounded-full overflow-hidden border-4 border-primary-blue/20 p-1 mb-8">
                 <div className="w-full h-full rounded-full overflow-hidden bg-slate-100">
                     {selectedEmployee.image_url ? (
@@ -813,11 +788,9 @@ export default function Home() {
                     )}
                 </div>
               </div>
-
               <div className="text-[0.7rem] font-bold text-primary-blue uppercase tracking-[0.2em] mb-2">Staff Profile</div>
               <h2 className="text-3xl font-black text-slate-900 mb-2">{selectedEmployee.name}</h2>
               <p className="text-lg font-bold text-primary-red uppercase tracking-tight mb-8">{selectedEmployee.position}</p>
-              
               <div className="w-full bg-slate-50 rounded-2xl p-4 border border-slate-100 flex items-center justify-center gap-3">
                 <Building2 size={20} className="text-slate-400" />
                 <span className="font-bold text-slate-600 uppercase text-sm">
@@ -825,7 +798,6 @@ export default function Home() {
                 </span>
               </div>
             </div>
-
             <div className="p-6 border-t border-slate-100 bg-slate-50">
               <button 
                 onClick={() => setSelectedEmployee(null)}
@@ -837,8 +809,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* Banner Modal */}
       {selectedBanner && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
           <div className="bg-white rounded-[40px] w-full max-w-5xl overflow-hidden flex flex-col shadow-2xl animate-in zoom-in duration-300 text-left">
@@ -851,13 +821,11 @@ export default function Home() {
                 <X size={24} />
               </button>
             </div>
-            
             <div className="p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8 bg-white">
               <div className="text-left flex-1">
                 <h2 className="text-3xl md:text-4xl font-black text-slate-900 mb-2">{selectedBanner.title || 'Special Promotion'}</h2>
                 <p className="text-slate-500 font-medium">PT. Central Proteina Prima - Warehouse Information Center</p>
               </div>
-              
               <div className="flex gap-4 w-full md:w-auto">
                   {selectedBanner.link_url && (
                     <a 
@@ -879,12 +847,9 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* Review Modal */}
       {selectedWarehouseForReview && (
         <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
           <div className="bg-white rounded-[40px] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in duration-300">
-            {/* Header */}
             <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
               <div className="text-left">
                 <h2 className="text-2xl font-black text-slate-900">{selectedWarehouseForReview.name}</h2>
@@ -897,10 +862,8 @@ export default function Home() {
                 <X size={20} />
               </button>
             </div>
-
             <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                {/* Form Section */}
                 <div className="space-y-6 text-left">
                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <MessageSquare size={18} className="text-[#004A99]" /> Write a Review
@@ -952,8 +915,6 @@ export default function Home() {
                         </button>
                     </form>
                 </div>
-
-                {/* List Section */}
                 <div className="space-y-6 text-left">
                     <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                         <Star size={18} className="text-yellow-500" /> Recent Feedback
@@ -992,8 +953,6 @@ export default function Home() {
           </div>
         </div>
       )}
-
-      {/* Footer */}
       <footer className="bg-[#0f172a] text-white pt-10 pb-8 px-[5%] text-center">
         <div className="pt-8 border-t border-[#1e293b] text-[#64748b] text-[0.85rem] flex flex-col md:flex-row justify-center items-center gap-2">
             <span>© {new Date().getFullYear()} PT Central Proteina Prima Tbk - Internal Warehouse Monitoring</span>
