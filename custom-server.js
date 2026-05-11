@@ -5,7 +5,19 @@ const { Server } = require('socket.io');
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const Database = require('better-sqlite3');
+const axios = require('axios');
 require('dotenv').config();
+
+// Child database mapping
+const childDatabases = {
+    'newgudang': '/root/newgudang/database/waru.db',
+    'gudangkletek': '/root/gudangkletek/database/kletek.db',
+    'gudangrm1': '/root/gudangrm1/database/gudangrawmaterialabba.db',
+    'gudangrm2': '/root/gudangrm2/database/gudangrawmaterialcassaland.db',
+    'gudangrm3': '/root/gudangrm3/database/gudangrawmaterialsumberasia.db',
+    'gudangrm4': '/root/gudangrm4/database/gudangrawmaterialkemasan.db'
+};
 
 // Services & Routes
 const googleSheets = require('./src/services/googleSheets');
@@ -50,7 +62,184 @@ app.prepare().then(() => {
     server.use('/api/admin', adminRoutes);
     
     server.get('/api/stats', (req, res) => {
-        res.json(warehouseStats);
+        try {
+            const results = JSON.parse(JSON.stringify(warehouseStats));
+            const today = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
+            
+            // Add ratings and current stats from DB
+            Object.keys(results).forEach(id => {
+                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
+                results[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
+                results[id].total_reviews = ratingData.total_reviews || 0;
+
+                // Pre-fetch today's stats if local DB exists
+                if (childDatabases[id]) {
+                    try {
+                        const childDb = new Database(childDatabases[id], { readonly: true });
+                        const data = childDb.prepare(`
+                            SELECT 
+                                SUM(CASE WHEN type='M' AND status NOT IN ('finished', 'cancelled') THEN 1 ELSE 0 END) as muat_q,
+                                SUM(CASE WHEN type='B' AND status NOT IN ('finished', 'cancelled') THEN 1 ELSE 0 END) as bongkar_q,
+                                SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
+                                SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today,
+                                SUM(CASE WHEN type='M' AND status='finished' THEN 1 ELSE 0 END) as muat_lifetime,
+                                SUM(CASE WHEN type='B' AND status='finished' THEN 1 ELSE 0 END) as bongkar_lifetime,
+                                AVG(CASE WHEN created_at >= date('now', '-30 days') THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w
+                            FROM queues
+                        `).get(`${today}%`, `${today}%`);
+
+                        if (!results[id].stats) results[id].stats = {};
+                        results[id].stats.muat_waiting = data.muat_q || 0;
+                        results[id].stats.bongkar_waiting = data.bongkar_q || 0;
+                        results[id].stats.finished_muat_today = data.muat_today || 0;
+                        results[id].stats.finished_bongkar_today = data.bongkar_today || 0;
+                        results[id].stats.avg_waiting = data.avg_w || 0;
+                        
+                        results[id].lifetime = {
+                            loading: data.muat_lifetime || 0,
+                            unloading: data.bongkar_lifetime || 0
+                        };
+                        childDb.close();
+                    } catch (e) {
+                        console.error(`Initial fetch error for ${id}:`, e.message);
+                    }
+                }
+            });
+            
+            res.json(results);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    server.get('/api/historical-stats', async (req, res) => {
+        const { date } = req.query; // YYYY-MM-DD
+        if (!date) return res.status(400).json({ error: 'Date is required' });
+
+        console.log(`[API] Fetching historical stats for: ${date}`);
+
+        try {
+            const occupancyData = await googleSheets.getOccupancyData(date);
+            const results = JSON.parse(JSON.stringify(warehouseStats)); // Deep clone
+
+            const fetchPromises = Object.keys(results).map(async (id) => {
+                const w = results[id];
+                
+                // Add ratings
+                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
+                w.avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
+                w.total_reviews = ratingData.total_reviews || 0;
+
+                // Update occupancy from sheets
+                const nameInStats = w.name;
+                const matchKey = Object.keys(occupancyData).find(key => 
+                    key.toLowerCase().trim() === nameInStats.toLowerCase().trim()
+                );
+                
+                if (matchKey) {
+                    const data = occupancyData[matchKey];
+                    w.occupancy = data.occupancy;
+                    w.capacity = data.capacity;
+                    w.actual = data.actual;
+                } else {
+                    w.occupancy = '0%';
+                    w.capacity = '0';
+                    w.actual = '0';
+                }
+
+                // Reset real-time status for historical view
+                w.status = 'historical';
+
+                // Direct DB Query if mapping exists
+                if (childDatabases[id]) {
+                    try {
+                        const childDb = new Database(childDatabases[id], { readonly: true });
+                        
+                        // Daily stats
+                        const dailyStats = childDb.prepare(`
+                            SELECT 
+                                SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
+                                SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today
+                            FROM queues
+                        `).get(`${date}%`, `${date}%`);
+
+                        // Lifetime stats (up to that date)
+                        const lifetimeStats = childDb.prepare(`
+                            SELECT 
+                                SUM(CASE WHEN type='M' AND status='finished' AND created_at <= ? THEN 1 ELSE 0 END) as muat_lifetime,
+                                SUM(CASE WHEN type='B' AND status='finished' AND created_at <= ? THEN 1 ELSE 0 END) as bongkar_lifetime
+                            FROM queues
+                        `).get(`${date} 23:59:59`, `${date} 23:59:59`);
+
+                        w.stats = {
+                            finished_muat_today: dailyStats.muat_today || 0,
+                            finished_bongkar_today: dailyStats.bongkar_today || 0,
+                            muat_waiting: 0,
+                            bongkar_waiting: 0,
+                            avg_waiting: 0,
+                        };
+
+                        w.lifetime = {
+                            loading: lifetimeStats.muat_lifetime || 0,
+                            unloading: lifetimeStats.bongkar_lifetime || 0
+                        };
+
+                        childDb.close();
+                        console.log(`[API] DB stats fetched for ${id}`);
+                    } catch (err) {
+                        console.error(`Error querying child DB for ${id}:`, err.message);
+                    }
+                } else if (w.url && w.url !== '#') {
+                    // Fallback to API if not a local DB
+                    try {
+                        const apiUrl = `${w.url.replace(/\/$/, '')}/api/history-data?date=${date}`;
+                        console.log(`[API] Fetching child stats via fallback API: ${apiUrl}`);
+                        const response = await axios.get(apiUrl, { timeout: 8000 });
+                        const { summary } = response.data;
+                        if (summary) {
+                            w.stats = {
+                                finished_muat_today: summary.do_count || 0,
+                                finished_bongkar_today: summary.po_count || 0,
+                                muat_waiting: 0,
+                                bongkar_waiting: 0,
+                                avg_waiting: 0,
+                            };
+                        }
+                    } catch (err) {
+                        console.error(`Error fetching historical stats via fallback for ${id}:`, err.message);
+                    }
+                }
+            });
+
+            await Promise.all(fetchPromises);
+            res.json(results);
+        } catch (err) {
+            console.error('Historical stats error:', err);
+            res.status(500).json({ error: 'Failed to fetch historical stats' });
+        }
+    });
+
+    // Review Routes
+    server.get('/api/reviews/:warehouse_id', (req, res) => {
+        try {
+            const reviews = db.prepare('SELECT * FROM reviews WHERE warehouse_id = ? ORDER BY created_at DESC').all(req.params.warehouse_id);
+            res.json(reviews);
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
+    server.post('/api/reviews', (req, res) => {
+        const { warehouse_id, rating, comment, reviewer_name } = req.body;
+        if (!warehouse_id || !rating) return res.status(400).json({ error: 'Warehouse ID and Rating are required' });
+        
+        try {
+            const stmt = db.prepare('INSERT INTO reviews (warehouse_id, rating, comment, reviewer_name) VALUES (?, ?, ?, ?)');
+            const info = stmt.run(warehouse_id, rating, comment || '', reviewer_name || 'Anonymous');
+            res.json({ success: true, id: info.lastInsertRowid });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
     });
 
     // Sync occupancy from Google Sheets

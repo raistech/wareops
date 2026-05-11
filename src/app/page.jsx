@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import { Database, Clock, Building2, Truck, CheckCircle2, Timer, ExternalLink, Newspaper, X, Layers, TrendingUp, Users, ChevronLeft, ChevronRight, Menu } from 'lucide-react';
+import { Database, Clock, Building2, Truck, CheckCircle2, Timer, ExternalLink, Newspaper, X, Layers, TrendingUp, Users, ChevronLeft, ChevronRight, Menu, Calendar, Loader2, Star, MessageSquare } from 'lucide-react';
 
 export default function Home() {
   const [warehouseStats, setWarehouseStats] = useState({});
@@ -13,8 +13,15 @@ export default function Home() {
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedBanner, setSelectedBanner] = useState(null);
+  const [selectedWarehouseForReview, setSelectedWarehouseForReview] = useState(null);
+  const [reviews, setReviews] = useState([]);
+  const [newReview, setNewReview] = useState({ rating: 5, comment: '', reviewer_name: '' });
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [isHistorical, setIsHistorical] = useState(false);
+  const [isFetchingHistory, setIsFetchingHistory] = useState(false);
   
   const [siteSettings, setSiteSettings] = useState({
     site_title: 'CP Prima | Monitoring Warehouse',
@@ -32,17 +39,144 @@ export default function Home() {
   });
 
   const [summary, setSummary] = useState({
-    activeWarehouses: 0,
-    totalQueues: 0,
-    totalFinishedLoading: 0,
-    totalFinishedUnloading: 0,
-    avgProcessTime: 0,
-    totalCapacity: 0,
-    totalActual: 0,
-    totalOccupancy: 0
+  activeWarehouses: 0,
+  totalQueues: 0,
+  totalFinishedLoading: 0,
+  totalFinishedUnloading: 0,
+  totalLifetimeLoading: 0,
+  totalLifetimeUnloading: 0,
+  avgProcessTime: 0,
+  totalCapacity: 0,
+  totalActual: 0,
+  totalOccupancy: 0
   });
 
-  useEffect(() => {
+  const parseNum = (str) => {
+  if (!str) return 0;
+  return parseFloat(str.toString().replace(/,/g, '')) || 0;
+  };
+
+  const calculateSummary = (data, historical = false) => {
+    if (!data) return;
+    let queues = 0;
+    let finishedLoading = 0;
+    let finishedUnloading = 0;
+    let lifetimeLoading = 0;
+    let lifetimeUnloading = 0;
+    let active = 0;
+    let processTime = 0;
+    let count = 0;
+    let capacity = 0;
+    let actual = 0;
+
+    Object.values(data).forEach(w => {
+      if (!w) return;
+      const stats = w.stats || {};
+
+      // Active logic: online in real-time OR had activity in historical
+      if (historical) {
+          if ((stats.finished_muat_today || 0) > 0 || (stats.finished_bongkar_today || 0) > 0) active++;
+      } else {
+          if (w.status === 'online') active++;
+      }
+
+      queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
+
+      finishedLoading += (stats.finished_muat_today || 0);
+      finishedUnloading += (stats.finished_bongkar_today || 0);
+
+      lifetimeLoading += (w.lifetime?.loading || 0);
+      lifetimeUnloading += (w.lifetime?.unloading || 0);
+
+      if (stats.avg_waiting > 0) { processTime += stats.avg_waiting; count++; }
+      // Note: avg_loading and avg_unloading are also available if needed
+      capacity += parseNum(w.capacity);
+      actual += parseNum(w.actual);
+    });
+
+    setSummary({
+      activeWarehouses: active,
+      totalQueues: queues,
+      totalFinishedLoading: finishedLoading,
+      totalFinishedUnloading: finishedUnloading,
+      totalLifetimeLoading: lifetimeLoading,
+      totalLifetimeUnloading: lifetimeUnloading,
+      avgProcessTime: count > 0 ? Math.round(processTime / count) : 0,
+      totalCapacity: capacity,
+      totalActual: actual,
+      totalOccupancy: capacity > 0 ? Math.round((actual / capacity) * 100) : 0
+    });
+  };
+    const fetchHistoricalData = async (date) => {
+      setIsFetchingHistory(true);
+      try {
+        const res = await fetch(`/api/historical-stats?date=${date}`);
+        const data = await res.json();
+        setWarehouseStats(data);
+        calculateSummary(data, true);
+        setLastRefreshed(new Date());
+      } catch (err) {
+        console.error('History fetch error:', err);
+      } finally {
+        setIsFetchingHistory(false);
+      }
+    };
+
+    const fetchReviews = async (warehouseId) => {
+        try {
+            const res = await fetch(`/api/reviews/${warehouseId}`);
+            const data = await res.json();
+            setReviews(data);
+        } catch (err) {
+            console.error('Fetch reviews error:', err);
+        }
+    };
+
+    const handleReviewSubmit = async (e) => {
+        e.preventDefault();
+        if (!selectedWarehouseForReview) return;
+        setIsSubmittingReview(true);
+        try {
+            const res = await fetch('/api/reviews', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    warehouse_id: selectedWarehouseForReview.id,
+                    ...newReview
+                })
+            });
+            const data = await res.json();
+            if (data.success) {
+                setNewReview({ rating: 5, comment: '', reviewer_name: '' });
+                fetchReviews(selectedWarehouseForReview.id);
+            }
+        } catch (err) {
+            console.error('Submit review error:', err);
+        } finally {
+            setIsSubmittingReview(false);
+        }
+    };
+
+    useEffect(() => {
+        const today = new Date().toISOString().split('T')[0];
+        if (selectedDate !== today) {
+            setIsHistorical(true);
+            fetchHistoricalData(selectedDate);
+        } else {
+            setIsHistorical(false);
+            fetch('/api/stats')
+                .then(res => res.json())
+                .then(data => {
+                    if (data) {
+                        setWarehouseStats(data);
+                        calculateSummary(data, false);
+                    }
+                })
+                .catch(err => console.error('Stats fetch error:', err));
+        }
+    }, [selectedDate]);
+
+    useEffect(() => {
     const socket = io();
 
     // Fetch site settings
@@ -89,52 +223,8 @@ export default function Home() {
         })
         .catch(err => console.error('Banners fetch error:', err));
 
-    const parseNum = (str) => {
-        if (!str) return 0;
-        return parseFloat(str.toString().replace(/,/g, '')) || 0;
-    };
-
-    const calculateSummary = (data) => {
-      if (!data) return;
-      let queues = 0;
-      let finishedLoading = 0;
-      let finishedUnloading = 0;
-      let active = 0;
-      let processTime = 0;
-      let count = 0;
-      let capacity = 0;
-      let actual = 0;
-
-      Object.values(data).forEach(w => {
-        if (!w) return;
-        const stats = w.stats || {};
-        if (w.status === 'online') active++;
-        queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
-        
-        finishedLoading += (w.lifetime?.loading || 0);
-        finishedUnloading += (w.lifetime?.unloading || 0);
-        
-        if (stats.avg_loading > 0) { processTime += stats.avg_loading; count++; }
-        if (stats.avg_unloading > 0) { processTime += stats.avg_unloading; count++; }
-
-        capacity += parseNum(w.capacity);
-        actual += parseNum(w.actual);
-      });
-
-      setSummary({
-        activeWarehouses: active,
-        totalQueues: queues,
-        totalFinishedLoading: finishedLoading,
-        totalFinishedUnloading: finishedUnloading,
-        avgProcessTime: count > 0 ? Math.round(processTime / count) : 0,
-        totalCapacity: capacity,
-        totalActual: actual,
-        totalOccupancy: capacity > 0 ? Math.round((actual / capacity) * 100) : 0
-      });
-    };
-
     socket.on('stats_updated', (data) => {
-      if (!data || !data.id) return;
+      if (!data || !data.id || isHistorical) return;
       setWarehouseStats(prev => {
         const newState = {
           ...prev,
@@ -144,13 +234,13 @@ export default function Home() {
             last_update: new Date()
           }
         };
-        calculateSummary(newState);
+        calculateSummary(newState, false);
         return newState;
       });
     });
 
     socket.on('warehouse_status_changed', (data) => {
-      if (!data || !data.id) return;
+      if (!data || !data.id || isHistorical) return;
       setWarehouseStats(prev => {
         const newState = {
           ...prev,
@@ -160,30 +250,20 @@ export default function Home() {
             last_update: new Date()
           }
         };
-        calculateSummary(newState);
+        calculateSummary(newState, false);
         return newState;
       });
     });
 
     socket.on('occupancy_updated', (data) => {
-      if (!data) return;
+      if (!data || isHistorical) return;
       setWarehouseStats(data);
-      calculateSummary(data);
+      calculateSummary(data, false);
       setLastRefreshed(new Date());
     });
 
-    fetch('/api/stats')
-      .then(res => res.json())
-      .then(data => {
-        if (data) {
-            setWarehouseStats(data);
-            calculateSummary(data);
-        }
-      })
-      .catch(err => console.error('Stats fetch error:', err));
-
     return () => socket.close();
-  }, []);
+  }, [isHistorical]);
 
   // Banner Auto-slide
   useEffect(() => {
@@ -328,12 +408,19 @@ export default function Home() {
                 <p className="text-[#64748b] mt-2 text-lg">{siteSettings.overview_description}</p>
             </div>
             <div className="flex flex-col items-end gap-1">
-                <div className="flex items-center gap-2 font-bold text-[#E30613] text-sm uppercase tracking-wider">
-                    <div className="w-2.5 h-2.5 bg-[#E30613] rounded-full animate-pulse shadow-[0_0_0_0_rgba(227,6,19,0.7)]"></div>
-                    Live Update
-                </div>
+                {isHistorical ? (
+                    <div className="flex items-center gap-2 font-bold text-[#004A99] text-sm uppercase tracking-wider">
+                        <Clock size={16} />
+                        Historical View
+                    </div>
+                ) : (
+                    <div className="flex items-center gap-2 font-bold text-[#E30613] text-sm uppercase tracking-wider">
+                        <div className="w-2.5 h-2.5 bg-[#E30613] rounded-full animate-pulse shadow-[0_0_0_0_rgba(227,6,19,0.7)]"></div>
+                        Live Update
+                    </div>
+                )}
                 <div className="text-[0.65rem] text-slate-400 font-bold uppercase text-right">
-                    Last sync: {lastRefreshed.toLocaleTimeString()}
+                    {isHistorical ? `Date: ${new Date(selectedDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}` : `Last sync: ${lastRefreshed.toLocaleTimeString()}`}
                 </div>
             </div>
         </div>
@@ -359,16 +446,26 @@ export default function Home() {
                 
                 <div className="space-y-6 text-left">
                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                        <Truck size={16} /> Total Activity
+                        <Truck size={16} /> Activity Status
                     </h3>
                     <div className="grid grid-cols-2 gap-4">
                         <div className="text-left">
-                            <span className="block text-2xl font-black text-[#004A99]">{summary.totalFinishedLoading}</span>
-                            <span className="text-[0.65rem] font-bold text-slate-400 uppercase text-nowrap">Finish Loading</span>
+                            <div className="flex justify-between items-end mb-1">
+                                <span className="text-2xl font-black text-[#004A99]">{summary.totalFinishedLoading}</span>
+                                <span className="text-[0.6rem] font-bold text-slate-400 uppercase">Day</span>
+                            </div>
+                            <div className="text-[0.65rem] font-bold text-slate-400 border-t border-slate-100 pt-1">
+                                <span className="text-slate-500">Total:</span> {summary.totalLifetimeLoading}
+                            </div>
                         </div>
                         <div className="text-left">
-                            <span className="block text-2xl font-black text-[#E30613]">{summary.totalFinishedUnloading}</span>
-                            <span className="text-[0.65rem] font-bold text-slate-400 uppercase text-nowrap">Finish Unload</span>
+                            <div className="flex justify-between items-end mb-1">
+                                <span className="text-2xl font-black text-[#E30613]">{summary.totalFinishedUnloading}</span>
+                                <span className="text-[0.6rem] font-bold text-slate-400 uppercase">Day</span>
+                            </div>
+                            <div className="text-[0.65rem] font-bold text-slate-400 border-t border-slate-100 pt-1">
+                                <span className="text-slate-500">Total:</span> {summary.totalLifetimeUnloading}
+                            </div>
                         </div>
                     </div>
                     <div className="pt-2 border-t border-slate-100 text-left">
@@ -455,9 +552,29 @@ export default function Home() {
 
       {/* Monitoring Section Header */}
       <section id="monitoring" className="pt-24 px-[5%] bg-[#f8fafc]">
-        <div className="max-w-[1400px] mx-auto mb-10 text-left">
-            <h2 className="text-3xl font-bold m-0">{siteSettings.monitoring_title}</h2>
-            <p className="text-[#64748b] mt-2 text-lg">{siteSettings.monitoring_description}</p>
+        <div className="max-w-[1400px] mx-auto mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="text-left">
+                <h2 className="text-3xl font-bold m-0">{siteSettings.monitoring_title}</h2>
+                <p className="text-[#64748b] mt-2 text-lg">{siteSettings.monitoring_description}</p>
+            </div>
+            
+            <div className="flex items-center gap-4 bg-white p-2.5 pl-5 rounded-2xl shadow-sm border border-slate-200 min-w-[300px]">
+                <div className="flex items-center gap-3 text-slate-400">
+                    <Calendar size={20} />
+                    <span className="text-sm font-bold uppercase tracking-wider">Filter Date</span>
+                </div>
+                <input 
+                    type="date" 
+                    value={selectedDate}
+                    onChange={(e) => setSelectedDate(e.target.value)}
+                    className="flex-1 bg-slate-50 border-none rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-[#004A99] outline-none cursor-pointer"
+                />
+                {isFetchingHistory && (
+                    <div className="animate-spin text-[#004A99] mr-2">
+                        <Loader2 size={20} />
+                    </div>
+                )}
+            </div>
         </div>
 
         {/* Warehouse Grid */}
@@ -471,16 +588,26 @@ export default function Home() {
               return (
                 <div key={id} className="bg-white rounded-[20px] p-6 shadow-sm border border-[#f1f5f9] hover:-translate-y-1.5 hover:shadow-xl transition-all flex flex-col text-left">
                   <div className="flex justify-between items-center mb-5">
-                    <div className="flex items-center">
+                    <div className="flex items-center flex-wrap gap-2">
                       <h2 className="text-lg font-bold m-0">{w.name}</h2>
+                      {w.total_reviews > 0 && (
+                        <div className="flex items-center gap-1 bg-yellow-50 text-yellow-700 px-2 py-0.5 rounded-lg border border-yellow-100 text-[0.7rem] font-bold">
+                            <Star size={12} className="fill-yellow-500 text-yellow-500" />
+                            {w.avg_rating} <span className="text-yellow-400 opacity-60">({w.total_reviews})</span>
+                        </div>
+                      )}
                       {isOnline && stats.avg_waiting < 10 && (
-                        <span className="ml-2 text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
+                        <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
                       )}
                     </div>
                     <div className={`flex items-center gap-1.5 text-[0.7rem] font-bold px-2.5 py-1 rounded-full uppercase ${
-                      isOnline ? 'bg-[#dcfce7] text-[#166534]' : 'bg-[#fee2e2] text-[#991b1b]'
+                      isOnline ? 'bg-[#dcfce7] text-[#166534]' : 
+                      w.status === 'historical' ? 'bg-[#e0f2fe] text-[#0369a1]' : 'bg-[#fee2e2] text-[#991b1b]'
                     }`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${isOnline ? 'bg-[#10b981]' : 'bg-[#ef4444]'}`}></span>
+                      <span className={`w-1.5 h-1.5 rounded-full ${
+                        isOnline ? 'bg-[#10b981]' : 
+                        w.status === 'historical' ? 'bg-[#0ea5e9]' : 'bg-[#ef4444]'
+                      }`}></span>
                       {w.status}
                     </div>
                   </div>
@@ -488,11 +615,11 @@ export default function Home() {
                   <div className="flex gap-3 mb-5">
                     <div className="flex-1 p-4 rounded-2xl text-center bg-[#eff6ff] border border-[#dbeafe]">
                       <span className="block text-3xl font-black text-[#3b82f6] leading-none mb-1">{stats.muat_waiting || 0}</span>
-                      <span className="text-[0.7rem] font-bold text-[#64748b] uppercase tracking-tighter">Loading Queue</span>
+                      <span className="text-[0.7rem] font-bold text-[#64748b] uppercase tracking-tighter">{isHistorical ? 'Remaining Q' : 'Loading Queue'}</span>
                     </div>
                     <div className="flex-1 p-4 rounded-2xl text-center bg-[#fffbeb] border border-[#fef3c7]">
                       <span className="block text-3xl font-black text-[#f59e0b] leading-none mb-1">{stats.bongkar_waiting || 0}</span>
-                      <span className="text-[0.7rem] font-bold text-[#64748b] uppercase tracking-tighter">Unloading Queue</span>
+                      <span className="text-[0.7rem] font-bold text-[#64748b] uppercase tracking-tighter">{isHistorical ? 'Remaining Q' : 'Unloading Queue'}</span>
                     </div>
                   </div>
 
@@ -511,14 +638,26 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mb-4">
-                    <div className="text-center p-2.5 bg-[#eff6ff] rounded-xl border border-blue-50">
-                      <span className="block font-bold text-sm text-[#004A99]">{w.lifetime?.loading || 0}</span>
-                      <span className="text-[0.6rem] text-[#64748b] font-bold uppercase tracking-tighter text-nowrap">Total Load Finish</span>
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="text-left p-3.5 bg-[#eff6ff] rounded-2xl border border-blue-50">
+                        <div className="flex justify-between items-end mb-1">
+                            <span className="text-2xl font-black text-[#004A99]">{stats.finished_muat_today || 0}</span>
+                            <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-tighter">Day</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-1.5 border-t border-blue-100/50">
+                            <span className="text-[0.6rem] font-bold text-slate-500 uppercase">Total Load</span>
+                            <span className="text-[0.7rem] font-black text-[#004A99]">{w.lifetime?.loading || 0}</span>
+                        </div>
                     </div>
-                    <div className="text-center p-2.5 bg-[#fff1f2] rounded-xl border border-red-50">
-                      <span className="block font-bold text-sm text-[#E30613]">{w.lifetime?.unloading || 0}</span>
-                      <span className="text-[0.6rem] text-[#64748b] font-bold uppercase tracking-tighter text-nowrap">Total Unld Finish</span>
+                    <div className="text-left p-3.5 bg-[#fff1f2] rounded-2xl border border-red-50">
+                        <div className="flex justify-between items-end mb-1">
+                            <span className="text-2xl font-black text-[#E30613]">{stats.finished_bongkar_today || 0}</span>
+                            <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-tighter">Day</span>
+                        </div>
+                        <div className="flex justify-between items-center pt-1.5 border-t border-red-100/50">
+                            <span className="text-[0.6rem] font-bold text-slate-500 uppercase">Total Unld</span>
+                            <span className="text-[0.7rem] font-black text-[#E30613]">{w.lifetime?.unloading || 0}</span>
+                        </div>
                     </div>
                   </div>
 
@@ -536,9 +675,20 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <a href={w.url} target="_blank" className="mt-auto flex items-center justify-center w-full p-3.5 bg-[#0f172a] text-white no-underline rounded-xl font-bold text-sm hover:bg-[#004A99] transition-all">
-                    Visit Queue <ExternalLink size={14} className="ml-2" />
-                  </a>
+                  <div className="flex gap-2 mt-auto">
+                    <button 
+                        onClick={() => {
+                            setSelectedWarehouseForReview({ id, name: w.name });
+                            fetchReviews(id);
+                        }}
+                        className="flex-1 flex items-center justify-center p-3.5 bg-white text-[#0f172a] border border-[#e2e8f0] rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
+                    >
+                        Reviews <Star size={14} className="ml-2 text-yellow-500 fill-yellow-500" />
+                    </button>
+                    <a href={w.url} target="_blank" className="flex-[1.5] flex items-center justify-center p-3.5 bg-[#0f172a] text-white no-underline rounded-xl font-bold text-sm hover:bg-[#004A99] transition-all">
+                        Visit Queue <ExternalLink size={14} className="ml-2" />
+                    </a>
+                  </div>
                   
                   <div className="mt-2.5 text-[0.65rem] text-[#64748b] flex items-center gap-1">
                     <Clock size={12} /> Active: {w.last_update ? new Date(w.last_update).toLocaleTimeString() : 'N/A'}
@@ -712,6 +862,119 @@ export default function Home() {
                   >
                     Close
                   </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Review Modal */}
+      {selectedWarehouseForReview && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="bg-white rounded-[40px] w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in duration-300">
+            {/* Header */}
+            <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white sticky top-0 z-10">
+              <div className="text-left">
+                <h2 className="text-2xl font-black text-slate-900">{selectedWarehouseForReview.name}</h2>
+                <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">Reviews & Ratings</p>
+              </div>
+              <button 
+                onClick={() => setSelectedWarehouseForReview(null)}
+                className="p-3 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Form Section */}
+                <div className="space-y-6 text-left">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <MessageSquare size={18} className="text-[#004A99]" /> Write a Review
+                    </h3>
+                    <form onSubmit={handleReviewSubmit} className="space-y-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Rating</label>
+                            <div className="flex gap-2">
+                                {[1, 2, 3, 4, 5].map(star => (
+                                    <button 
+                                        key={star}
+                                        type="button"
+                                        onClick={() => setNewReview({...newReview, rating: star})}
+                                        className="transition-transform active:scale-90"
+                                    >
+                                        <Star 
+                                            size={28} 
+                                            className={`${star <= newReview.rating ? 'text-yellow-500 fill-yellow-500' : 'text-slate-300'}`} 
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Your Name</label>
+                            <input 
+                                type="text"
+                                placeholder="Anonymous"
+                                value={newReview.reviewer_name}
+                                onChange={(e) => setNewReview({...newReview, reviewer_name: e.target.value})}
+                                className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#004A99] outline-none font-medium"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Comment</label>
+                            <textarea 
+                                placeholder="Tell us about your experience..."
+                                value={newReview.comment}
+                                onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
+                                className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#004A99] outline-none font-medium h-32 resize-none"
+                            />
+                        </div>
+                        <button 
+                            type="submit"
+                            disabled={isSubmittingReview}
+                            className="w-full py-4 bg-[#004A99] text-white rounded-2xl font-bold hover:bg-blue-900 transition-all shadow-lg flex items-center justify-center gap-2"
+                        >
+                            {isSubmittingReview ? <Loader2 size={20} className="animate-spin" /> : 'Submit Review'}
+                        </button>
+                    </form>
+                </div>
+
+                {/* List Section */}
+                <div className="space-y-6 text-left">
+                    <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <Star size={18} className="text-yellow-500" /> Recent Feedback
+                    </h3>
+                    <div className="space-y-4">
+                        {reviews.length === 0 ? (
+                            <div className="bg-white p-8 rounded-3xl border border-slate-100 text-center text-slate-400 italic">
+                                No reviews yet. Be the first!
+                            </div>
+                        ) : (
+                            reviews.map(review => (
+                                <div key={review.id} className="bg-white p-5 rounded-3xl border border-slate-100 shadow-sm">
+                                    <div className="flex justify-between items-start mb-2">
+                                        <div className="font-bold text-slate-800">{review.reviewer_name}</div>
+                                        <div className="flex gap-0.5">
+                                            {[...Array(5)].map((_, i) => (
+                                                <Star 
+                                                    key={i} 
+                                                    size={12} 
+                                                    className={`${i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-slate-200'}`} 
+                                                />
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <p className="text-sm text-slate-500 mb-3">{review.comment}</p>
+                                    <div className="text-[0.65rem] font-bold text-slate-300 uppercase">
+                                        {new Date(review.created_at).toLocaleDateString('id-ID')}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
               </div>
             </div>
           </div>

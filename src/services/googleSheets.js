@@ -14,8 +14,9 @@ const sheets = google.sheets({ version: 'v4', auth });
 
 /**
  * Fetches occupancy data from Google Sheets.
+ * @param {string} targetDate - Optional date in YYYY-MM-DD format. Defaults to today.
  */
-const getOccupancyData = async () => {
+const getOccupancyData = async (targetDate = null) => {
     try {
         const response = await sheets.spreadsheets.values.get({
             spreadsheetId: SPREADSHEET_ID,
@@ -28,10 +29,19 @@ const getOccupancyData = async () => {
             return {};
         }
 
-        const today = new Date();
-        const dd = String(today.getDate()).padStart(2, '0');
-        const mm = String(today.getMonth() + 1).padStart(2, '0');
-        const yyyy = today.getFullYear();
+        let dd, mm, yyyy;
+        if (targetDate) {
+            const parts = targetDate.split('-');
+            yyyy = parts[0];
+            mm = parts[1].padStart(2, '0');
+            dd = parts[2].padStart(2, '0');
+        } else {
+            const today = new Date();
+            dd = String(today.getDate()).padStart(2, '0');
+            mm = String(today.getMonth() + 1).padStart(2, '0');
+            yyyy = today.getFullYear();
+        }
+        
         const todayStr = `${dd}/${mm}/${yyyy}`;
         
         console.log(`[SHEETS] Searching for date: ${todayStr}`);

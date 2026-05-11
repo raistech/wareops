@@ -104,6 +104,25 @@ router.delete('/employees/:id', (req, res) => {
     res.json({ success: true });
 });
 
+// Review Moderation Routes
+router.get('/reviews', (req, res) => {
+    try {
+        const reviews = db.prepare('SELECT * FROM reviews ORDER BY created_at DESC').all();
+        res.json(reviews);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/reviews/:id', (req, res) => {
+    try {
+        db.prepare('DELETE FROM reviews WHERE id = ?').run(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Settings routes
 router.get('/settings', (req, res) => {
     try {
