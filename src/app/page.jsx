@@ -51,10 +51,7 @@ export default function Home() {
   if (!str) return 0;
   return parseFloat(str.toString().replace(/,/g, '')) || 0;
   };
-  const calculateSummary = (data, historical = false) => {
-    const registeredData = data.registered || {};
-    const unregisteredData = data.unregistered || {};
-    if (!registeredData && !unregisteredData) return;
+  useEffect(() => {
     let queues = 0;
     let finishedLoading = 0;
     let finishedUnloading = 0;
@@ -65,28 +62,34 @@ export default function Home() {
     let count = 0;
     let capacity = 0;
     let actual = 0;
-    Object.values(registeredData).forEach(w => {
+
+    Object.values(warehouseStats).forEach(w => {
       if (!w) return;
       const stats = w.stats || {};
-      if (historical) {
+
+      if (isHistorical) {
           if ((stats.finished_muat_today || 0) > 0 || (stats.finished_bongkar_today || 0) > 0) active++;
       } else {
           if (w.status === 'online') active++;
       }
+
       queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
       finishedLoading += (stats.finished_muat_today || 0);
       finishedUnloading += (stats.finished_bongkar_today || 0);
       lifetimeLoading += (w.lifetime?.loading || 0);
       lifetimeUnloading += (w.lifetime?.unloading || 0);
+
       if (stats.avg_waiting > 0) { processTime += stats.avg_waiting; count++; }
       capacity += parseNum(w.capacity);
       actual += parseNum(w.actual);
     });
-    Object.values(unregisteredData).forEach(w => {
+
+    Object.values(unregisteredStats).forEach(w => {
         if (!w) return;
         capacity += parseNum(w.capacity);
         actual += parseNum(w.actual);
     });
+
     setSummary({
       activeWarehouses: active,
       totalQueues: queues,
@@ -99,7 +102,7 @@ export default function Home() {
       totalActual: actual,
       totalOccupancy: capacity > 0 ? Math.round((actual / capacity) * 100) : 0
     });
-  };
+  }, [warehouseStats, unregisteredStats, isHistorical]);
     const fetchHistoricalData = async (date) => {
       setIsFetchingHistory(true);
       try {
@@ -107,7 +110,6 @@ export default function Home() {
         const data = await res.json();
         setWarehouseStats(data.registered || {});
         setUnregisteredStats(data.unregistered || {});
-        calculateSummary(data, true);
         setLastRefreshed(new Date());
       } catch (err) {
         console.error('History fetch error:', err);
@@ -161,7 +163,6 @@ export default function Home() {
                     if (data) {
                         setWarehouseStats(data.registered || {});
                         setUnregisteredStats(data.unregistered || {});
-                        calculateSummary(data, false);
                     }
                 })
                 .catch(err => console.error('Stats fetch error:', err));
@@ -207,39 +208,48 @@ export default function Home() {
         .catch(err => console.error('Banners fetch error:', err));
     socket.on('stats_updated', (data) => {
       if (!data || !data.id || isHistorical) return;
-      setWarehouseStats(prev => {
-        const newState = {
-          ...prev,
-          [data.id]: {
-            ...prev[data.id],
-            ...data,
-            last_update: new Date()
-          }
-        };
-        calculateSummary(newState, false);
-        return newState;
-      });
+      setWarehouseStats(prev => ({
+        ...prev,
+        [data.id]: {
+          ...prev[data.id],
+          ...data,
+          stats: data.stats || prev[data.id]?.stats,
+          lifetime: data.lifetime?.loading ? data.lifetime : prev[data.id]?.lifetime,
+          last_update: new Date()
+        }
+      }));
     });
+
     socket.on('warehouse_status_changed', (data) => {
       if (!data || !data.id || isHistorical) return;
-      setWarehouseStats(prev => {
-        const newState = {
-          ...prev,
-          [data.id]: {
-            ...prev[data.id],
-            ...data,
-            last_update: new Date()
-          }
-        };
-        calculateSummary(newState, false);
-        return newState;
-      });
+      setWarehouseStats(prev => ({
+        ...prev,
+        [data.id]: {
+          ...prev[data.id],
+          ...data,
+          stats: data.stats || prev[data.id]?.stats,
+          lifetime: data.lifetime?.loading ? data.lifetime : prev[data.id]?.lifetime,
+          last_update: new Date()
+        }
+      }));
     });
+
     socket.on('occupancy_updated', (data) => {
       if (!data || isHistorical) return;
-      setWarehouseStats(data.registered || {});
+      setWarehouseStats(prev => {
+        const incoming = data.registered || {};
+        const merged = { ...prev };
+        Object.keys(incoming).forEach(id => {
+          merged[id] = {
+            ...prev[id],
+            ...incoming[id],
+            stats: incoming[id].stats || prev[id]?.stats,
+            lifetime: incoming[id].lifetime?.loading ? incoming[id].lifetime : prev[id]?.lifetime
+          };
+        });
+        return merged;
+      });
       setUnregisteredStats(data.unregistered || {});
-      calculateSummary(data, false);
       setLastRefreshed(new Date());
     });
     return () => socket.close();
