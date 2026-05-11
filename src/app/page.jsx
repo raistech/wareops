@@ -62,34 +62,28 @@ export default function Home() {
     let count = 0;
     let capacity = 0;
     let actual = 0;
-
     Object.values(warehouseStats).forEach(w => {
       if (!w) return;
       const stats = w.stats || {};
-
       if (isHistorical) {
           if ((stats.finished_muat_today || 0) > 0 || (stats.finished_bongkar_today || 0) > 0) active++;
       } else {
           if (w.status === 'online') active++;
       }
-
       queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0);
       finishedLoading += (stats.finished_muat_today || 0);
       finishedUnloading += (stats.finished_bongkar_today || 0);
       lifetimeLoading += (w.lifetime?.loading || 0);
       lifetimeUnloading += (w.lifetime?.unloading || 0);
-
       if (stats.avg_waiting > 0) { processTime += stats.avg_waiting; count++; }
       capacity += parseNum(w.capacity);
       actual += parseNum(w.actual);
     });
-
     Object.values(unregisteredStats).forEach(w => {
         if (!w) return;
         capacity += parseNum(w.capacity);
         actual += parseNum(w.actual);
     });
-
     setSummary({
       activeWarehouses: active,
       totalQueues: queues,
@@ -219,7 +213,6 @@ export default function Home() {
         }
       }));
     });
-
     socket.on('warehouse_status_changed', (data) => {
       if (!data || !data.id || isHistorical) return;
       setWarehouseStats(prev => ({
@@ -233,7 +226,6 @@ export default function Home() {
         }
       }));
     });
-
     socket.on('occupancy_updated', (data) => {
       if (!data || isHistorical) return;
       setWarehouseStats(prev => {
