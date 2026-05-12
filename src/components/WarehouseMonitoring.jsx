@@ -42,7 +42,7 @@ export const WarehouseMonitoring = ({
       </div>
       <div className="max-w-[1400px] mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
         {Object.entries(warehouseStats)
-          .filter(([id, w]) => w && id !== 'gudangpabrik')
+          .filter(([id, w]) => w)
           .map(([id, w]) => {
           const stats = w.stats || {};
           const isOnline = w.status === 'online';
@@ -245,7 +245,7 @@ export const WarehouseMonitoring = ({
           );
         })}
       </div>
-      {(Object.keys(unregisteredStats).length > 0 || warehouseStats['gudangpabrik']) && (
+      {Object.keys(unregisteredStats).length > 0 && (
         <div className="max-w-[1400px] mx-auto mb-10 text-left">
           <div className="flex items-center gap-3 mb-8">
             <div className="w-1.5 h-8 bg-[#E30613] rounded-full"></div>
@@ -255,24 +255,6 @@ export const WarehouseMonitoring = ({
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pb-24">
-            {warehouseStats['gudangpabrik'] && (
-              <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-100 flex flex-col hover:shadow-md transition-shadow">
-                <h4 className="text-sm font-black text-slate-900 mb-4">{warehouseStats['gudangpabrik'].name}</h4>
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center text-[0.7rem] font-bold">
-                    <span className="text-slate-500 uppercase">Occupancy</span>
-                    <span className={getOccupancyPercent(warehouseStats['gudangpabrik'].occupancy) > 80 ? 'text-red-600' : 'text-emerald-600'}>{warehouseStats['gudangpabrik'].occupancy}</span>
-                  </div>
-                  <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                    <div className={`h-full ${getOccupancyPercent(warehouseStats['gudangpabrik'].occupancy) > 80 ? 'bg-red-500' : 'bg-emerald-500'} transition-all`} style={{ width: `${getOccupancyPercent(warehouseStats['gudangpabrik'].occupancy)}%` }}></div>
-                  </div>
-                  <div className="flex justify-between text-[0.6rem] text-slate-400 font-bold uppercase">
-                    <span>Act: {warehouseStats['gudangpabrik'].actual}</span>
-                    <span>Cap: {warehouseStats['gudangpabrik'].capacity}</span>
-                  </div>
-                </div>
-              </div>
-            )}
             {Object.values(unregisteredStats).map((w, idx) => {
               const occPercent = getOccupancyPercent(w.occupancy);
               return (

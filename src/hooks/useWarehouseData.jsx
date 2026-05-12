@@ -145,23 +145,20 @@ export const useWarehouseData = (selectedDate) => {
       if (!w) return;
       const stats = w.stats || {};
       
-      // Metrics only for monitored warehouses (exclude RM Pabrik)
-      if (id !== 'gudangpabrik') {
-        if (isHistorical) {
-          if ((stats.finished_muat_today || 0) > 0 || (stats.finished_bongkar_today || 0) > 0) active++;
-        } else {
-          if (w.status === 'online') active++;
-        }
-        queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0) + (stats.muat_processing || 0) + (stats.bongkar_processing || 0);
-        finishedLoading += (stats.finished_muat_today || 0);
-        finishedUnloading += (stats.finished_bongkar_today || 0);
-        lifetimeLoading += (w.lifetime?.loading || 0);
-        lifetimeUnloading += (w.lifetime?.unloading || 0);
-        activeReports += (w.active_reports || 0);
-        if (stats.avg_waiting > 0) { processTime += stats.avg_waiting; count++; }
+      if (isHistorical) {
+        if ((stats.finished_muat_today || 0) > 0 || (stats.finished_bongkar_today || 0) > 0) active++;
+      } else {
+        if (w.status === 'online') active++;
       }
+      queues += (stats.muat_waiting || 0) + (stats.bongkar_waiting || 0) + (stats.muat_processing || 0) + (stats.bongkar_processing || 0);
+      finishedLoading += (stats.finished_muat_today || 0);
+      finishedUnloading += (stats.finished_bongkar_today || 0);
+      lifetimeLoading += (w.lifetime?.loading || 0);
+      lifetimeUnloading += (w.lifetime?.unloading || 0);
+      activeReports += (w.active_reports || 0);
+      if (stats.avg_waiting > 0) { processTime += stats.avg_waiting; count++; }
 
-      // Capacity and Actual Stock for ALL warehouses including RM Pabrik
+      // Capacity and Actual Stock
       capacity += parseNum(w.capacity);
       actual += parseNum(w.actual);
     });
