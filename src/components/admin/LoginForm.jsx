@@ -5,12 +5,12 @@ import { Lock, Loader2 } from 'lucide-react';
 export const LoginForm = ({ handleLogin, loginPassword, setLoginPassword, loading }) => {
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center">
-      <div className="bg-white rounded-3xl p-10 w-full max-w-md shadow-2xl">
-        <div className="w-20 h-20 bg-[#E30613]/10 text-[#E30613] rounded-2xl flex items-center justify-center mx-auto mb-8">
-          <Lock size={40} />
+      <div className="bg-white rounded-3xl p-6 md:p-10 w-full max-w-md shadow-2xl">
+        <div className="w-16 h-16 md:w-20 md:h-20 bg-[#E30613]/10 text-[#E30613] rounded-2xl flex items-center justify-center mx-auto mb-6 md:mb-8">
+          <Lock size={32} />
         </div>
-        <h1 className="text-2xl font-black mb-2 text-slate-800 tracking-tight">ADMIN ACCESS</h1>
-        <p className="text-slate-500 mb-10 text-sm">Please enter your password to continue.</p>
+        <h1 className="text-xl md:text-2xl font-black mb-2 text-slate-800 tracking-tight">ADMIN ACCESS</h1>
+        <p className="text-slate-500 mb-8 md:mb-10 text-sm">Please enter your password to continue.</p>
         
         <form onSubmit={handleLogin} className="space-y-6">
           <input 

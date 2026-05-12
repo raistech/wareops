@@ -59,6 +59,7 @@ export const SummarySection = ({
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-left">
+                <div className="text-[0.65rem] font-black text-[#004A99] uppercase mb-1">Loading</div>
                 <div className="flex justify-between items-end mb-1">
                   <span className="text-2xl font-black text-[#004A99]">{summary.totalFinishedLoading}</span>
                   <span className="text-[0.6rem] font-bold text-slate-400 uppercase">Day</span>
@@ -68,6 +69,7 @@ export const SummarySection = ({
                 </div>
               </div>
               <div className="text-left">
+                <div className="text-[0.65rem] font-black text-[#E30613] uppercase mb-1">Unloading</div>
                 <div className="flex justify-between items-end mb-1">
                   <span className="text-2xl font-black text-[#E30613]">{summary.totalFinishedUnloading}</span>
                   <span className="text-[0.6rem] font-bold text-slate-400 uppercase">Day</span>

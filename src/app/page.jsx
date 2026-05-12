@@ -68,7 +68,7 @@ export default function Home() {
         isHistorical={isHistorical}
         selectedDate={selectedDate}
         lastRefreshed={lastRefreshed}
-        totalWarehouses={Object.keys(warehouseStats).length}
+        totalWarehouses={Object.keys(warehouseStats).filter(id => id !== 'gudangpabrik').length}
       />
 
       <NewsSection 

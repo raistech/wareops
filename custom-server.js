@@ -141,6 +141,8 @@ app.prepare().then(() => {
                             finished_bongkar_today: dailyStats.bongkar_today || 0,
                             muat_waiting: 0,
                             bongkar_waiting: 0,
+                            muat_processing: 0,
+                            bongkar_processing: 0,
                             avg_waiting: dailyStats.avg_w || 0,
                             avg_loading: dailyStats.avg_l || 0,
                             avg_unloading: dailyStats.avg_u || 0,

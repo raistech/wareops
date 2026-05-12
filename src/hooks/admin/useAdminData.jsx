@@ -9,18 +9,18 @@ export const useAdminData = (isLoggedIn) => {
   const [employees, setEmployees] = useState([]);
   const [reviews, setReviews] = useState([]);
   const [siteSettings, setSiteSettings] = useState({
-    site_title: 'CP Prima | Monitoring Warehouse',
-    site_name: 'Warehouse Ops',
-    company_name: 'CP Prima Logistics',
+    site_title: 'Warehouse Monitoring',
+    site_name: 'Warehouse CPP',
+    company_name: 'PT. Central Proteina Prima',
     site_icon: '',
-    hero_title: 'Logistics Control Center',
-    hero_description: 'Real-time logistics flow monitoring and warehouse operational efficiency PT. Central Proteina Prima.',
-    overview_title: 'Logistics Overview',
+    hero_title: 'Warehouse Division PT. Central Proteina Prima',
+    hero_description: 'Real-time flow monitoring for warehouse operational efficiency PT. Central Proteina Prima.',
+    overview_title: 'Warehouse Overview',
     overview_description: 'Comprehensive summary of all warehouse operations.',
     news_title: 'Latest News & Articles',
-    news_description: 'Stay updated with our latest logistics insights and company news.',
-    monitoring_title: 'Warehouse Overview',
-    monitoring_description: 'Detailed real-time monitoring for each warehouse unit.'
+    news_description: 'Stay updated with our latest Warehouse insights and company news.',
+    monitoring_title: 'Warehouse Monitoring',
+    monitoring_description: 'Comprehensive Monitoring of all warehouse operations.'
   });
 
   const [newBlog, setNewBlog] = useState({ title: '', content: '' });
