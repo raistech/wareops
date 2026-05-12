@@ -58,8 +58,18 @@ export const WarehouseMonitoring = ({
                       {w.avg_rating} <span className="text-yellow-400 opacity-60">({w.total_reviews})</span>
                     </div>
                   )}
-                  {isOnline && stats.avg_loading > 0 && stats.avg_loading < 30 && (
-                    <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
+                  {isOnline && stats.avg_loading > 0 && (
+                    <>
+                      {stats.avg_loading <= 20 && (
+                        <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
+                      )}
+                      {stats.avg_loading > 20 && stats.avg_loading <= 30 && (
+                        <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-100 uppercase">Normal</span>
+                      )}
+                      {stats.avg_loading > 30 && (
+                        <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-100 uppercase">Delayed</span>
+                      )}
+                    </>
                   )}
                   {w.active_reports > 0 && (
                     <div className="flex items-center gap-1 bg-red-50 text-red-700 px-2 py-0.5 rounded-lg border border-red-100 text-[0.65rem] font-black animate-pulse">
