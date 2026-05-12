@@ -1,6 +1,6 @@
 'use client';
 
-import { Newspaper, Image as ImageIcon, Users, Star, Settings, LogOut, X } from 'lucide-react';
+import { Newspaper, Image as ImageIcon, Users, Star, Settings, LogOut, X, MessageSquare } from 'lucide-react';
 
 export const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, setIsOpen }) => {
   const tabs = [
@@ -8,6 +8,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, se
     { id: 'banners', label: 'Banners', icon: ImageIcon },
     { id: 'employees', label: 'Employees', icon: Users },
     { id: 'reviews', label: 'Reviews', icon: Star },
+    { id: 'reports', label: 'Reports', icon: MessageSquare },
     { id: 'settings', label: 'Site Settings', icon: Settings },
   ];
 

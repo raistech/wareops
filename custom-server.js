@@ -55,6 +55,10 @@ app.prepare().then(() => {
                 const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
                 results[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
                 results[id].total_reviews = ratingData.total_reviews || 0;
+                
+                const activeReports = db.prepare("SELECT COUNT(*) as count FROM reports WHERE warehouse_id = ? AND status IN ('pending', 'received')").get(id);
+                results[id].active_reports = activeReports.count || 0;
+
                 if (childDatabases[id]) {
                     try {
                         const childDb = new Database(childDatabases[id], { readonly: true });
@@ -90,6 +94,21 @@ app.prepare().then(() => {
             res.status(500).json({ error: err.message });
         }
     });
+
+    server.post('/api/reports', (req, res) => {
+        try {
+            const { warehouse_id, reporter_name, reporter_phone, category, description, photo } = req.body;
+            if (!warehouse_id || !category || !description) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
+            const stmt = db.prepare('INSERT INTO reports (warehouse_id, reporter_name, reporter_phone, category, description, photo) VALUES (?, ?, ?, ?, ?, ?)');
+            const info = stmt.run(warehouse_id, reporter_name || 'Anonymous', reporter_phone || '', category, description, photo || null);
+            res.json({ success: true, id: info.lastInsertRowid });
+        } catch (err) {
+            res.status(500).json({ error: err.message });
+        }
+    });
+
     server.get('/api/historical-stats', async (req, res) => {
         const { date } = req.query; 
         if (!date) return res.status(400).json({ error: 'Date is required' });
@@ -103,6 +122,10 @@ app.prepare().then(() => {
                 const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
                 w.avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
                 w.total_reviews = ratingData.total_reviews || 0;
+                
+                const activeReports = db.prepare("SELECT COUNT(*) as count FROM reports WHERE warehouse_id = ? AND status IN ('pending', 'received') AND created_at <= ?").get(id, `${date} 23:59:59`);
+                w.active_reports = activeReports.count || 0;
+
                 const nameInStats = w.name;
                 const matchKey = Object.keys(occupancyData).find(key => 
                     key.toLowerCase().trim() === nameInStats.toLowerCase().trim()

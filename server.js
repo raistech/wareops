@@ -48,8 +48,8 @@ const syncOccupancy = async () => {
     console.log('[SYNC] Fetching occupancy from Google Sheets...');
     const occupancyData = await googleSheets.getOccupancyData();
     
-    // Map sheet names to our IDs
-    // We match by the 'name' property in warehouseStats
+    // Map sheet names to IDs
+    // Match by the 'name' property in warehouseStats
     Object.keys(warehouseStats).forEach(id => {
         const nameInStats = warehouseStats[id].name;
         // Try to find matching name in occupancyData (case insensitive)

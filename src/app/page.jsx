@@ -8,18 +8,19 @@ import { BannerSlider } from '../components/BannerSlider';
 import { SummarySection } from '../components/SummarySection';
 import { NewsSection } from '../components/NewsSection';
 import { WarehouseMonitoring } from '../components/WarehouseMonitoring';
-import { BlogModal, EmployeeModal, BannerModal, ReviewModal } from '../components/Modals';
+import { BlogModal, EmployeeModal, BannerModal, ReviewModal, ReportModal } from '../components/Modals';
 import { Footer } from '../components/Footer';
 
 export default function Home() {
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
+
   // Selection states for modals
   const [selectedBlog, setSelectedBlog] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedBanner, setSelectedBanner] = useState(null);
   const [selectedWarehouseForReview, setSelectedWarehouseForReview] = useState(null);
+  const [selectedWarehouseForReport, setSelectedWarehouseForReport] = useState(null);
 
   const {
     warehouseStats,
@@ -42,7 +43,8 @@ export default function Home() {
     setNewReview,
     isSubmittingReview,
     fetchReviews,
-    handleReviewSubmit
+    handleReviewSubmit,
+    submitReport
   } = useSiteData();
 
   return (
@@ -88,6 +90,7 @@ export default function Home() {
         employees={employees}
         setSelectedEmployee={setSelectedEmployee}
         setSelectedWarehouseForReview={setSelectedWarehouseForReview}
+        setSelectedWarehouseForReport={setSelectedWarehouseForReport}
         fetchReviews={fetchReviews}
       />
 
@@ -110,6 +113,12 @@ export default function Home() {
         handleReviewSubmit={handleReviewSubmit}
         isSubmittingReview={isSubmittingReview}
         reviews={reviews}
+      />
+
+      <ReportModal 
+        selectedWarehouseForReport={selectedWarehouseForReport}
+        setSelectedWarehouseForReport={setSelectedWarehouseForReport}
+        submitReport={submitReport}
       />
 
       <Footer />

@@ -1,4 +1,4 @@
-import { Calendar, Loader2, Star, ExternalLink, Clock, Users } from 'lucide-react';
+import { Calendar, Loader2, Star, ExternalLink, Clock, Users, AlertTriangle } from 'lucide-react';
 import { getOccupancyPercent } from '../utils/formatters';
 
 export const WarehouseMonitoring = ({ 
@@ -12,6 +12,7 @@ export const WarehouseMonitoring = ({
   employees, 
   setSelectedEmployee, 
   setSelectedWarehouseForReview, 
+  setSelectedWarehouseForReport,
   fetchReviews 
 }) => {
   return (
@@ -59,6 +60,12 @@ export const WarehouseMonitoring = ({
                   )}
                   {isOnline && stats.avg_waiting < 10 && (
                     <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
+                  )}
+                  {w.active_reports > 0 && (
+                    <div className="flex items-center gap-1 bg-red-50 text-red-700 px-2 py-0.5 rounded-lg border border-red-100 text-[0.65rem] font-black animate-pulse">
+                      <AlertTriangle size={10} />
+                      {w.active_reports} ISSUE{w.active_reports > 1 ? 'S' : ''}
+                    </div>
                   )}
                 </div>
                 <div className={`flex items-center gap-1.5 text-[0.7rem] font-bold px-2.5 py-1 rounded-full uppercase ${
@@ -176,6 +183,12 @@ export const WarehouseMonitoring = ({
                   className="flex-1 flex items-center justify-center p-3.5 bg-white text-[#0f172a] border border-[#e2e8f0] rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
                 >
                   Reviews <Star size={14} className="ml-2 text-yellow-500 fill-yellow-500" />
+                </button>
+                <button 
+                  onClick={() => setSelectedWarehouseForReport({ id, name: w.name })}
+                  className="flex-1 flex items-center justify-center p-3.5 bg-white text-red-600 border border-red-100 rounded-xl font-bold text-sm hover:bg-red-50 transition-all"
+                >
+                  Lapor <AlertTriangle size={14} className="ml-2" />
                 </button>
                 <a href={w.url} target="_blank" className="flex-[1.5] flex items-center justify-center p-3.5 bg-[#0f172a] text-white no-underline rounded-xl font-bold text-sm hover:bg-[#004A99] transition-all">
                   Visit Queue <ExternalLink size={14} className="ml-2" />

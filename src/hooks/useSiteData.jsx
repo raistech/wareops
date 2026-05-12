@@ -110,6 +110,20 @@ export const useSiteData = () => {
     return false;
   };
 
+  const submitReport = async (reportData) => {
+    try {
+      const res = await fetch('/api/reports', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reportData)
+      });
+      return await res.json();
+    } catch (err) {
+      console.error('Report submission error:', err);
+      return { error: err.message };
+    }
+  };
+
   return {
     siteSettings,
     blogs,
@@ -123,6 +137,7 @@ export const useSiteData = () => {
     setNewReview,
     isSubmittingReview,
     fetchReviews,
-    handleReviewSubmit
+    handleReviewSubmit,
+    submitReport
   };
 };

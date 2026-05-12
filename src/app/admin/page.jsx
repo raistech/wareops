@@ -10,6 +10,7 @@ import { EmployeeManagement } from '../../components/admin/EmployeeManagement';
 import { BannerManagement } from '../../components/admin/BannerManagement';
 import { ReviewModeration } from '../../components/admin/ReviewModeration';
 import { SiteSettings } from '../../components/admin/SiteSettings';
+import { ReportManagement } from '../../components/admin/ReportManagement';
 
 export default function AdminPage() {
   const {
@@ -31,6 +32,7 @@ export default function AdminPage() {
     banners,
     employees,
     reviews,
+    reports,
     siteSettings,
     setSiteSettings,
     newBlog,
@@ -46,6 +48,8 @@ export default function AdminPage() {
     loading: dataLoading,
     deleteItem,
     handleDeleteReview,
+    handleUpdateReportStatus,
+    handleDeleteReport,
     handleCreateBlog,
     handleCreateEmployee,
     handleCreateBanner,
@@ -141,6 +145,14 @@ export default function AdminPage() {
           <ReviewModeration 
             reviews={reviews}
             handleDeleteReview={handleDeleteReview}
+          />
+        )}
+
+        {activeTab === 'reports' && (
+          <ReportManagement 
+            reports={reports}
+            handleUpdateReportStatus={handleUpdateReportStatus}
+            handleDeleteReport={handleDeleteReport}
           />
         )}
 

@@ -8,6 +8,7 @@ export const useAdminData = (isLoggedIn) => {
   const [banners, setBanners] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [reviews, setReviews] = useState([]);
+  const [reports, setReports] = useState([]);
   const [siteSettings, setSiteSettings] = useState({
     site_title: 'Warehouse Monitoring',
     site_name: 'Warehouse CPP',
@@ -38,9 +39,39 @@ export const useAdminData = (isLoggedIn) => {
       if (activeTab === 'banners') setBanners(data);
       if (activeTab === 'employees') setEmployees(data);
       if (activeTab === 'reviews') setReviews(data);
+      if (activeTab === 'reports') setReports(data);
       if (activeTab === 'settings') setSiteSettings(prev => ({ ...prev, ...data }));
     } catch (err) {
       console.error('Fetch error:', err);
+    }
+  };
+
+  const handleUpdateReportStatus = async (id, status) => {
+    try {
+      const res = await fetch(`/api/admin/reports/${id}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status })
+      });
+      if (res.ok) {
+        await fetchData();
+        showMessage('success', `Report marked as ${status}`);
+      }
+    } catch (err) {
+      showMessage('error', 'Failed to update status');
+    }
+  };
+
+  const handleDeleteReport = async (id) => {
+    if (!confirm('Are you sure you want to delete this report?')) return;
+    try {
+      const res = await fetch(`/api/admin/reports/${id}`, { method: 'DELETE' });
+      if (res.ok) {
+        await fetchData();
+        showMessage('success', 'Report deleted');
+      }
+    } catch (err) {
+      showMessage('error', 'Delete failed');
     }
   };
 
@@ -218,6 +249,7 @@ export const useAdminData = (isLoggedIn) => {
     banners,
     employees,
     reviews,
+    reports,
     siteSettings,
     setSiteSettings,
     newBlog,
@@ -235,6 +267,8 @@ export const useAdminData = (isLoggedIn) => {
     fetchData,
     deleteItem,
     handleDeleteReview,
+    handleUpdateReportStatus,
+    handleDeleteReport,
     handleCreateBlog,
     handleCreateEmployee,
     handleCreateBanner,

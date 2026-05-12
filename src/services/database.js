@@ -55,6 +55,18 @@ db.exec(`
         reviewer_name TEXT DEFAULT 'Anonymous',
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+
+    CREATE TABLE IF NOT EXISTS reports (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        warehouse_id TEXT NOT NULL,
+        reporter_name TEXT,
+        reporter_phone TEXT,
+        category TEXT NOT NULL,
+        description TEXT NOT NULL,
+        photo TEXT,
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
 `);
 
 // Seed default settings if not exists

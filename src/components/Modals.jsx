@@ -1,4 +1,5 @@
-import { X, Newspaper, Users, Building2, ExternalLink, MessageSquare, Star, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Newspaper, Users, Building2, ExternalLink, MessageSquare, Star, Loader2, Image as ImageIcon } from 'lucide-react';
 
 export const BlogModal = ({ selectedBlog, setSelectedBlog }) => {
   if (!selectedBlog) return null;
@@ -248,6 +249,200 @@ export const ReviewModal = ({
               </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export const ReportModal = ({ 
+  selectedWarehouseForReport, 
+  setSelectedWarehouseForReport, 
+  submitReport 
+}) => {
+  const [reportForm, setReportForm] = useState({
+    reporter_name: '',
+    reporter_phone: '',
+    category: 'Pelayanan Lambat',
+    description: ''
+  });
+  const [photo, setPhoto] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState(null);
+
+  if (!selectedWarehouseForReport) return null;
+
+  const compressImage = (file) => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const max_size = 800;
+
+          if (width > height) {
+            if (width > max_size) {
+              height *= max_size / width;
+              width = max_size;
+            }
+          } else {
+            if (height > max_size) {
+              width *= max_size / height;
+              height = max_size;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.7));
+        };
+      };
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    let photoBase64 = null;
+    if (photo) {
+      photoBase64 = await compressImage(photo);
+    }
+
+    const result = await submitReport({
+      warehouse_id: selectedWarehouseForReport.id,
+      ...reportForm,
+      photo: photoBase64
+    });
+
+    if (result.success) {
+      setMessage({ type: 'success', text: 'Laporan berhasil terkirim! Admin akan segera memvalidasi.' });
+      setTimeout(() => {
+        setSelectedWarehouseForReport(null);
+        setReportForm({ reporter_name: '', reporter_phone: '', category: 'Pelayanan Lambat', description: '' });
+        setPhoto(null);
+        setMessage(null);
+      }, 3000);
+    } else {
+      setMessage({ type: 'error', text: 'Gagal mengirim laporan. Silakan coba lagi.' });
+    }
+    setIsSubmitting(false);
+  };
+
+  return (
+    <div className="fixed inset-0 z-[140] flex items-center justify-center p-4 bg-black/70 backdrop-blur-md text-left">
+      <div className="bg-white rounded-[40px] w-full max-w-lg overflow-hidden flex flex-col shadow-2xl animate-in zoom-in duration-300">
+        <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white">
+          <div className="text-left">
+            <h2 className="text-2xl font-black text-[#E30613]">Lapor Kendala</h2>
+            <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{selectedWarehouseForReport.name}</p>
+          </div>
+          <button 
+            onClick={() => setSelectedWarehouseForReport(null)}
+            className="p-3 bg-slate-100 hover:bg-slate-200 rounded-full text-slate-500 transition-colors"
+          >
+            <X size={20} />
+          </button>
+        </div>
+        
+        <div className="flex-1 overflow-y-auto p-8 bg-slate-50">
+          {message ? (
+            <div className={`p-8 rounded-3xl text-center ${message.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+              <div className="text-4xl mb-4">{message.type === 'success' ? '✅' : '❌'}</div>
+              <p className="font-bold">{message.text}</p>
+            </div>
+          ) : (
+            <form onSubmit={handleSubmit} className="space-y-5 text-left">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Nama (Opsional)</label>
+                  <input 
+                    type="text"
+                    value={reportForm.reporter_name}
+                    onChange={(e) => setReportForm({...reportForm, reporter_name: e.target.value})}
+                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#E30613]"
+                    placeholder="Supir / Tamu"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 uppercase mb-2">No. HP (Opsional)</label>
+                  <input 
+                    type="text"
+                    value={reportForm.reporter_phone}
+                    onChange={(e) => setReportForm({...reportForm, reporter_phone: e.target.value})}
+                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#E30613]"
+                    placeholder="0812..."
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Kategori Laporan</label>
+                <select 
+                  value={reportForm.category}
+                  onChange={(e) => setReportForm({...reportForm, category: e.target.value})}
+                  className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#E30613] font-bold"
+                >
+                  <option>Pelayanan Lambat</option>
+                  <option>Kebersihan</option>
+                  <option>Keamanan / Kenyamanan</option>
+                  <option>Alat Rusak (Forklift/Dll)</option>
+                  <option>Lainnya</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Deskripsi Kejadian</label>
+                <textarea 
+                  required
+                  value={reportForm.description}
+                  onChange={(e) => setReportForm({...reportForm, description: e.target.value})}
+                  className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#E30613] h-32 resize-none"
+                  placeholder="Ceritakan kendala yang Anda alami secara detail..."
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 uppercase mb-2">Foto Bukti</label>
+                <div className="relative">
+                  <input 
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setPhoto(e.target.files[0])}
+                    className="hidden"
+                    id="report-photo"
+                  />
+                  <label 
+                    htmlFor="report-photo"
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-white hover:border-[#E30613] cursor-pointer transition-all"
+                  >
+                    {photo ? (
+                      <span className="text-sm font-bold text-[#004A99]">{photo.name}</span>
+                    ) : (
+                      <>
+                        <Users size={32} className="text-slate-300 mb-2" />
+                        <span className="text-xs font-bold text-slate-400">Klik untuk upload foto</span>
+                      </>
+                    )}
+                  </label>
+                </div>
+              </div>
+
+              <button 
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-4 bg-[#E30613] text-white rounded-2xl font-bold hover:bg-red-800 transition-all shadow-lg flex items-center justify-center gap-2"
+              >
+                {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : 'Kirim Laporan'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

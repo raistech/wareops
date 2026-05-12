@@ -123,6 +123,35 @@ router.delete('/reviews/:id', (req, res) => {
     }
 });
 
+// Report Management Routes
+router.get('/reports', (req, res) => {
+    try {
+        const reports = db.prepare('SELECT * FROM reports ORDER BY created_at DESC').all();
+        res.json(reports);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.put('/reports/:id/status', (req, res) => {
+    try {
+        const { status } = req.body;
+        db.prepare('UPDATE reports SET status = ? WHERE id = ?').run(status, req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.delete('/reports/:id', (req, res) => {
+    try {
+        db.prepare('DELETE FROM reports WHERE id = ?').run(req.params.id);
+        res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // Settings routes
 router.get('/settings', (req, res) => {
     try {

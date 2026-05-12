@@ -12,6 +12,7 @@ export const useWarehouseData = (selectedDate) => {
     totalFinishedUnloading: 0,
     totalLifetimeLoading: 0,
     totalLifetimeUnloading: 0,
+    totalActiveReports: 0,
     avgProcessTime: 0,
     totalCapacity: 0,
     totalActual: 0,
@@ -119,11 +120,12 @@ export const useWarehouseData = (selectedDate) => {
     let finishedUnloading = 0;
     let lifetimeLoading = 0;
     let lifetimeUnloading = 0;
+    let activeReports = 0;
     let active = 0;
     let processTime = 0;
-    let count = 0;
     let capacity = 0;
     let actual = 0;
+    let count = 0;
 
     Object.entries(warehouseStats).forEach(([id, w]) => {
       if (!w) return;
@@ -141,6 +143,7 @@ export const useWarehouseData = (selectedDate) => {
         finishedUnloading += (stats.finished_bongkar_today || 0);
         lifetimeLoading += (w.lifetime?.loading || 0);
         lifetimeUnloading += (w.lifetime?.unloading || 0);
+        activeReports += (w.active_reports || 0);
         if (stats.avg_waiting > 0) { processTime += stats.avg_waiting; count++; }
       }
 
@@ -162,6 +165,7 @@ export const useWarehouseData = (selectedDate) => {
       totalFinishedUnloading: finishedUnloading,
       totalLifetimeLoading: lifetimeLoading,
       totalLifetimeUnloading: lifetimeUnloading,
+      totalActiveReports: activeReports,
       avgProcessTime: count > 0 ? Math.round(processTime / count) : 0,
       totalCapacity: capacity,
       totalActual: actual,
