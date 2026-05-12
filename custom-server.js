@@ -33,6 +33,74 @@ const warehouseStats = {
     'gudangrm4': { name: 'RM Kemasan', status: 'offline', stats: null, url: 'https://gudangkemasan.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
 };
 let unregisteredWarehouses = {};
+
+// Helper to refresh stats for a warehouse from its database
+const refreshWarehouseAnalytics = (id) => {
+    if (!warehouseStats[id]) return;
+    
+    // 1. Get Ratings & Active Reports from Master DB
+    const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
+    warehouseStats[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
+    warehouseStats[id].total_reviews = ratingData.total_reviews || 0;
+    
+    const activeReports = db.prepare("SELECT COUNT(*) as count FROM reports WHERE warehouse_id = ? AND status IN ('pending', 'received')").get(id);
+    warehouseStats[id].active_reports = activeReports.count || 0;
+
+    // 2. Get Performance Averages from Child DB
+    if (childDatabases[id]) {
+        try {
+            const childDb = new Database(childDatabases[id], { readonly: true });
+            const today = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
+            
+            const data = childDb.prepare(`
+                SELECT 
+                    SUM(CASE WHEN type='M' AND status NOT IN ('finished', 'cancelled') THEN 1 ELSE 0 END) as muat_q,
+                    SUM(CASE WHEN type='B' AND status NOT IN ('finished', 'cancelled') THEN 1 ELSE 0 END) as bongkar_q,
+                    SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
+                    SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today,
+                    SUM(CASE WHEN type='M' AND status='finished' THEN 1 ELSE 0 END) as muat_lifetime,
+                    SUM(CASE WHEN type='B' AND status='finished' THEN 1 ELSE 0 END) as bongkar_lifetime,
+                    AVG(CASE WHEN status='finished' AND created_at LIKE ? THEN (strftime('%s', COALESCE(called_at, processing_at)) - strftime('%s', created_at))/60.0 END) as avg_w_today,
+                    AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at, created_at)))/60.0 END) as avg_l_today,
+                    AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at, created_at)))/60.0 END) as avg_u_today,
+                    AVG(CASE WHEN status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', COALESCE(called_at, processing_at)) - strftime('%s', created_at))/60.0 END) as avg_w_30d,
+                    AVG(CASE WHEN type='M' AND status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at, created_at)))/60.0 END) as avg_l_30d,
+                    AVG(CASE WHEN type='B' AND status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at, created_at)))/60.0 END) as avg_u_30d
+                FROM queues
+            `).get(`${today}%`, `${today}%`, `${today}%`, `${today}%`, `${today}%`);
+
+            if (!warehouseStats[id].stats) warehouseStats[id].stats = {};
+            
+            // Live Queues
+            warehouseStats[id].stats.muat_waiting = data.muat_q || 0;
+            warehouseStats[id].stats.bongkar_waiting = data.bongkar_q || 0;
+            warehouseStats[id].stats.finished_muat_today = data.muat_today || 0;
+            warehouseStats[id].stats.finished_bongkar_today = data.bongkar_today || 0;
+            
+            // Analytics
+            warehouseStats[id].stats.avg_waiting_today = data.avg_w_today || 0;
+            warehouseStats[id].stats.avg_loading_today = data.avg_l_today || 0;
+            warehouseStats[id].stats.avg_unloading_today = data.avg_u_today || 0;
+            warehouseStats[id].stats.avg_waiting_30d = data.avg_w_30d || 0;
+            warehouseStats[id].stats.avg_loading_30d = data.avg_l_30d || 0;
+            warehouseStats[id].stats.avg_unloading_30d = data.avg_u_30d || 0;
+
+            // Legacy fallbacks
+            warehouseStats[id].stats.avg_waiting = data.avg_w_today || data.avg_w_30d || 0;
+            warehouseStats[id].stats.avg_loading = data.avg_l_today || data.avg_l_30d || 0;
+            warehouseStats[id].stats.avg_unloading = data.avg_u_today || data.avg_u_30d || 0;
+
+            warehouseStats[id].lifetime = {
+                loading: data.muat_lifetime || 0,
+                unloading: data.bongkar_lifetime || 0
+            };
+            childDb.close();
+        } catch (e) {
+            console.error(`Analytics refresh error for ${id}:`, e.message);
+        }
+    }
+};
+
 app.prepare().then(() => {
     const server = express();
     const httpServer = createServer(server);
@@ -55,66 +123,8 @@ app.prepare().then(() => {
     server.use('/api/admin', adminRoutes);
     server.get('/api/stats', (req, res) => {
         try {
-            const results = JSON.parse(JSON.stringify(warehouseStats));
-            const today = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
-            Object.keys(results).forEach(id => {
-                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
-                results[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
-                results[id].total_reviews = ratingData.total_reviews || 0;
-                
-                const activeReports = db.prepare("SELECT COUNT(*) as count FROM reports WHERE warehouse_id = ? AND status IN ('pending', 'received')").get(id);
-                results[id].active_reports = activeReports.count || 0;
-
-                if (childDatabases[id]) {
-                    try {
-                        const childDb = new Database(childDatabases[id], { readonly: true });
-                        const data = childDb.prepare(`
-                            SELECT 
-                                SUM(CASE WHEN type='M' AND status NOT IN ('finished', 'cancelled') THEN 1 ELSE 0 END) as muat_q,
-                                SUM(CASE WHEN type='B' AND status NOT IN ('finished', 'cancelled') THEN 1 ELSE 0 END) as bongkar_q,
-                                SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
-                                SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today,
-                                SUM(CASE WHEN type='M' AND status='finished' THEN 1 ELSE 0 END) as muat_lifetime,
-                                SUM(CASE WHEN type='B' AND status='finished' THEN 1 ELSE 0 END) as bongkar_lifetime,
-                                -- Daily Averages
-                                AVG(CASE WHEN status='finished' AND created_at LIKE ? THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w_today,
-                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', called_at))/60.0 END) as avg_l_today,
-                                AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', called_at))/60.0 END) as avg_u_today,
-                                -- 30D Averages
-                                AVG(CASE WHEN status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w_30d,
-                                AVG(CASE WHEN type='M' AND status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', finished_at) - strftime('%s', called_at))/60.0 END) as avg_l_30d,
-                                AVG(CASE WHEN type='B' AND status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', finished_at) - strftime('%s', called_at))/60.0 END) as avg_u_30d
-                            FROM queues
-                        `).get(`${today}%`, `${today}%`, `${today}%`, `${today}%`, `${today}%`);
-                        if (!results[id].stats) results[id].stats = {};
-                        results[id].stats.muat_waiting = data.muat_q || 0;
-                        results[id].stats.bongkar_waiting = data.bongkar_q || 0;
-                        results[id].stats.finished_muat_today = data.muat_today || 0;
-                        results[id].stats.finished_bongkar_today = data.bongkar_today || 0;
-                        
-                        // Populate results
-                        results[id].stats.avg_waiting_today = data.avg_w_today || 0;
-                        results[id].stats.avg_loading_today = data.avg_l_today || 0;
-                        results[id].stats.avg_unloading_today = data.avg_u_today || 0;
-                        results[id].stats.avg_waiting_30d = data.avg_w_30d || 0;
-                        results[id].stats.avg_loading_30d = data.avg_l_30d || 0;
-                        results[id].stats.avg_unloading_30d = data.avg_u_30d || 0;
-
-                        // Legacy support for older UI components if needed
-                        results[id].stats.avg_waiting = data.avg_w_today || data.avg_w_30d || 0;
-                        results[id].stats.avg_loading = data.avg_l_today || data.avg_l_30d || 0;
-                        results[id].stats.avg_unloading = data.avg_u_today || data.avg_u_30d || 0;
-                        results[id].lifetime = {
-                            loading: data.muat_lifetime || 0,
-                            unloading: data.bongkar_lifetime || 0
-                        };
-                        childDb.close();
-                    } catch (e) {
-                        console.error(`Initial fetch error for ${id}:`, e.message);
-                    }
-                }
-            });
-            res.json({ registered: results, unregistered: unregisteredWarehouses });
+            Object.keys(warehouseStats).forEach(id => refreshWarehouseAnalytics(id));
+            res.json({ registered: warehouseStats, unregistered: unregisteredWarehouses });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
@@ -129,13 +139,9 @@ app.prepare().then(() => {
             const stmt = db.prepare('INSERT INTO reports (warehouse_id, reporter_name, reporter_phone, category, description, photo) VALUES (?, ?, ?, ?, ?, ?)');
             const info = stmt.run(warehouse_id, reporter_name || 'Anonymous', reporter_phone || '', category, description, photo || null);
             
-            // Real-time notification via socket
-            io.emit('report_submitted', { 
-                warehouse_id, 
-                id: info.lastInsertRowid,
-                category,
-                created_at: new Date()
-            });
+            // Real-time notification with refreshed count
+            refreshWarehouseAnalytics(warehouse_id);
+            io.emit('stats_updated', { id: warehouse_id, ...warehouseStats[warehouse_id] });
 
             res.json({ success: true, id: info.lastInsertRowid });
         } catch (err) {
@@ -149,33 +155,29 @@ app.prepare().then(() => {
         console.log(`[API] Fetching historical stats for: ${date}`);
         try {
             const occupancyData = await googleSheets.getOccupancyData(date);
-            const results = JSON.parse(JSON.stringify(warehouseStats)); 
-            const unregistered = {};
-            const fetchPromises = Object.keys(results).map(async (id) => {
+            const results = {}; // Temporary results for historical date
+            
+            for (const id of Object.keys(warehouseStats)) {
+                results[id] = JSON.parse(JSON.stringify(warehouseStats[id]));
                 const w = results[id];
-                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
-                w.avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
-                w.total_reviews = ratingData.total_reviews || 0;
                 
                 const activeReports = db.prepare("SELECT COUNT(*) as count FROM reports WHERE warehouse_id = ? AND status IN ('pending', 'received') AND created_at <= ?").get(id, `${date} 23:59:59`);
                 w.active_reports = activeReports.count || 0;
 
-                const nameInStats = w.name;
                 const matchKey = Object.keys(occupancyData).find(key => 
-                    key.toLowerCase().trim() === nameInStats.toLowerCase().trim()
+                    key.toLowerCase().trim() === w.name.toLowerCase().trim()
                 );
                 if (matchKey) {
                     const data = occupancyData[matchKey];
-                    w.name = matchKey; // Sync name with sheet casing
+                    w.name = matchKey;
                     w.occupancy = data.occupancy;
                     w.capacity = data.capacity;
                     w.actual = data.actual;
                 } else {
-                    w.occupancy = '0%';
-                    w.capacity = '0';
-                    w.actual = '0';
+                    w.occupancy = '0%'; w.capacity = '0'; w.actual = '0';
                 }
                 w.status = 'historical';
+                
                 if (childDatabases[id]) {
                     try {
                         const childDb = new Database(childDatabases[id], { readonly: true });
@@ -183,79 +185,44 @@ app.prepare().then(() => {
                             SELECT 
                                 SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
                                 SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today,
-                                AVG(CASE WHEN status='finished' AND created_at LIKE ? THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w_today,
-                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_l_today,
-                                AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_u_today
-                            FROM queues
-                        `).get(`${date}%`, `${date}%`, `${date}%`, `${date}%`, `${date}%`);
-                        const lifetimeStats = childDb.prepare(`
-                            SELECT 
+                                AVG(CASE WHEN status='finished' AND created_at LIKE ? THEN (strftime('%s', COALESCE(called_at, processing_at)) - strftime('%s', created_at))/60.0 END) as avg_w_today,
+                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at, created_at)))/60.0 END) as avg_l_today,
+                                AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at, created_at)))/60.0 END) as avg_u_today,
                                 SUM(CASE WHEN type='M' AND status='finished' AND created_at <= ? THEN 1 ELSE 0 END) as muat_lifetime,
                                 SUM(CASE WHEN type='B' AND status='finished' AND created_at <= ? THEN 1 ELSE 0 END) as bongkar_lifetime
                             FROM queues
-                        `).get(`${date} 23:59:59`, `${date} 23:59:59`);
+                        `).get(`${date}%`, `${date}%`, `${date}%`, `${date}%`, `${date}%`, `${date} 23:59:59`, `${date} 23:59:59`);
+                        
                         w.stats = {
                             finished_muat_today: dailyStats.muat_today || 0,
                             finished_bongkar_today: dailyStats.bongkar_today || 0,
-                            muat_waiting: 0,
-                            bongkar_waiting: 0,
-                            muat_processing: 0,
-                            bongkar_processing: 0,
                             avg_waiting_today: dailyStats.avg_w_today || 0,
                             avg_loading_today: dailyStats.avg_l_today || 0,
                             avg_unloading_today: dailyStats.avg_u_today || 0,
-                            // Fallbacks for UI
                             avg_waiting: dailyStats.avg_w_today || 0,
                             avg_loading: dailyStats.avg_l_today || 0,
                             avg_unloading: dailyStats.avg_u_today || 0,
                         };
-                        w.lifetime = {
-                            loading: lifetimeStats.muat_lifetime || 0,
-                            unloading: lifetimeStats.bongkar_lifetime || 0
-                        };
+                        w.lifetime = { loading: dailyStats.muat_lifetime || 0, unloading: dailyStats.bongkar_lifetime || 0 };
                         childDb.close();
-                        console.log(`[API] DB stats fetched for ${id}`);
-                    } catch (err) {
-                        console.error(`Error querying child DB for ${id}:`, err.message);
-                    }
-                } else if (w.url && w.url !== '#') {
-                    try {
-                        const apiUrl = `${w.url.replace(/\/$/, '')}/api/history-data?date=${date}`;
-                        console.log(`[API] Fetching child stats via fallback API: ${apiUrl}`);
-                        const response = await axios.get(apiUrl, { timeout: 8000 });
-                        const { summary } = response.data;
-                        if (summary) {
-                            w.stats = {
-                                finished_muat_today: summary.do_count || 0,
-                                finished_bongkar_today: summary.po_count || 0,
-                                muat_waiting: 0,
-                                bongkar_waiting: 0,
-                                avg_waiting: 0,
-                            };
-                        }
-                    } catch (err) {
-                        console.error(`Error fetching historical stats via fallback for ${id}:`, err.message);
-                    }
+                    } catch (e) { console.error(e); }
                 }
-            });
+            }
+            
+            const unregistered = {};
             Object.keys(occupancyData).forEach(name => {
-                const isRegistered = Object.values(warehouseStats).some(w => w.name.toLowerCase().trim() === name.toLowerCase().trim());
+                const isRegistered = Object.values(results).some(w => w.name.toLowerCase().trim() === name.toLowerCase().trim());
                 if (!isRegistered && name.toLowerCase().trim() !== 'rm pabrik') {
-                    unregistered[name] = {
-                        name: name,
-                        ...occupancyData[name],
-                        status: 'historical',
-                        isUnregistered: true
-                    };
+                    unregistered[name] = { name, ...occupancyData[name], status: 'historical', isUnregistered: true };
                 }
             });
-            await Promise.all(fetchPromises);
             res.json({ registered: results, unregistered });
         } catch (err) {
             console.error('Historical stats error:', err);
             res.status(500).json({ error: 'Failed to fetch historical stats' });
         }
     });
+
     server.get('/api/reviews/:warehouse_id', (req, res) => {
         try {
             const reviews = db.prepare('SELECT * FROM reviews WHERE warehouse_id = ? ORDER BY created_at DESC').all(req.params.warehouse_id);
@@ -264,31 +231,25 @@ app.prepare().then(() => {
             res.status(500).json({ error: err.message });
         }
     });
+
     server.post('/api/reviews', (req, res) => {
         const { warehouse_id, rating, comment, reviewer_name } = req.body;
         if (!warehouse_id || !rating) return res.status(400).json({ error: 'Warehouse ID and Rating are required' });
         try {
             const stmt = db.prepare('INSERT INTO reviews (warehouse_id, rating, comment, reviewer_name) VALUES (?, ?, ?, ?)');
             const info = stmt.run(warehouse_id, rating, comment || '', reviewer_name || 'Anonymous');
-            if (warehouseStats[warehouse_id]) {
-                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(warehouse_id);
-                warehouseStats[warehouse_id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
-                warehouseStats[warehouse_id].total_reviews = ratingData.total_reviews || 0;
-                io.emit('stats_updated', { 
-                    id: warehouse_id, 
-                    ...warehouseStats[warehouse_id]
-                });
-            }
+            refreshWarehouseAnalytics(warehouse_id);
+            io.emit('stats_updated', { id: warehouse_id, ...warehouseStats[warehouse_id] });
             res.json({ success: true, id: info.lastInsertRowid });
         } catch (err) {
             res.status(500).json({ error: err.message });
         }
     });
+
     const syncOccupancy = async () => {
         console.log('[SYNC] Fetching occupancy from Google Sheets...');
         try {
             const occupancyData = await googleSheets.getOccupancyData();
-            const unregistered = {};
             Object.keys(warehouseStats).forEach(id => {
                 const nameInStats = warehouseStats[id].name;
                 const matchKey = Object.keys(occupancyData).find(key => 
@@ -296,28 +257,18 @@ app.prepare().then(() => {
                 );
                 if (matchKey) {
                     const data = occupancyData[matchKey];
-                    warehouseStats[id].name = matchKey; // Sync name with sheet casing
+                    warehouseStats[id].name = matchKey;
                     warehouseStats[id].occupancy = data.occupancy;
                     warehouseStats[id].capacity = data.capacity;
                     warehouseStats[id].actual = data.actual;
-                    console.log(`[SYNC] ${id} (${matchKey}): Occ=${data.occupancy}, Act=${data.actual}, Cap=${data.capacity}`);
-                } else {
-                    console.log(`[SYNC] No match for ${id} (${nameInStats}) in sheets`);
                 }
-                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
-                warehouseStats[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
-                warehouseStats[id].total_reviews = ratingData.total_reviews || 0;
+                refreshWarehouseAnalytics(id);
             });
             unregisteredWarehouses = {};
             Object.keys(occupancyData).forEach(name => {
                 const isRegistered = Object.values(warehouseStats).some(w => w.name.toLowerCase().trim() === name.toLowerCase().trim());
                 if (!isRegistered) {
-                    unregisteredWarehouses[name] = {
-                        name: name,
-                        ...occupancyData[name],
-                        status: 'offline',
-                        isUnregistered: true
-                    };
+                    unregisteredWarehouses[name] = { name, ...occupancyData[name], status: 'offline', isUnregistered: true };
                 }
             });
             io.emit('occupancy_updated', { registered: warehouseStats, unregistered: unregisteredWarehouses });
@@ -327,6 +278,7 @@ app.prepare().then(() => {
     };
     syncOccupancy();
     setInterval(syncOccupancy, 60 * 1000);
+
     io.on('connection', (socket) => {
         socket.on('register_warehouse', (data) => {
             const { id, token } = data;
@@ -335,28 +287,18 @@ app.prepare().then(() => {
                 socket.join('warehouses');
                 socket.warehouseId = id;
                 warehouseStats[id].status = 'online';
-                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(id);
-                warehouseStats[id].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
-                warehouseStats[id].total_reviews = ratingData.total_reviews || 0;
+                refreshWarehouseAnalytics(id);
                 io.emit('warehouse_status_changed', { id, ...warehouseStats[id] });
                 console.log(`Warehouse Registered: ${id}`);
             }
         });
         socket.on('update_stats', (stats) => {
             if (socket.warehouseId && warehouseStats[socket.warehouseId]) {
-                warehouseStats[socket.warehouseId].lifetime = {
-                    loading: stats.finished_muat_lifetime || 0,
-                    unloading: stats.finished_bongkar_lifetime || 0
-                };
-                warehouseStats[socket.warehouseId].stats = stats;
+                // Merge real-time stats with DB analytics
+                warehouseStats[socket.warehouseId].stats = { ...warehouseStats[socket.warehouseId].stats, ...stats };
+                refreshWarehouseAnalytics(socket.warehouseId);
                 warehouseStats[socket.warehouseId].last_update = new Date();
-                const ratingData = db.prepare('SELECT AVG(rating) as avg_rating, COUNT(*) as total_reviews FROM reviews WHERE warehouse_id = ?').get(socket.warehouseId);
-                warehouseStats[socket.warehouseId].avg_rating = ratingData.avg_rating ? parseFloat(ratingData.avg_rating.toFixed(1)) : 0;
-                warehouseStats[socket.warehouseId].total_reviews = ratingData.total_reviews || 0;
-                io.emit('stats_updated', { 
-                    id: socket.warehouseId, 
-                    ...warehouseStats[socket.warehouseId]
-                });
+                io.emit('stats_updated', { id: socket.warehouseId, ...warehouseStats[socket.warehouseId] });
             }
         });
         socket.on('disconnect', () => {

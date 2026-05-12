@@ -94,47 +94,42 @@ export const useWarehouseData = (selectedDate) => {
 
     socket.on('occupancy_updated', (data) => {
       if (!data || isHistorical) return;
+      
       setWarehouseStats(prev => {
-        const incoming = data.registered || {};
-        const merged = { ...prev };
-        Object.keys(incoming).forEach(id => {
-          merged[id] = {
-            ...prev[id],
-            ...incoming[id],
-            stats: incoming[id].stats || prev[id]?.stats,
-            lifetime: incoming[id].lifetime?.loading ? incoming[id].lifetime : prev[id]?.lifetime
-          };
+        const newRegistered = data.registered || {};
+        const merged = { ...newRegistered };
+        
+        // Preserve existing stats if the new object has null/missing stats
+        Object.keys(merged).forEach(id => {
+          if (prev[id] && (!merged[id].stats || Object.keys(merged[id].stats).length === 0)) {
+            merged[id] = {
+              ...merged[id],
+              stats: prev[id].stats,
+              lifetime: merged[id].lifetime || prev[id].lifetime,
+              last_update: merged[id].last_update || prev[id].last_update
+            };
+          } else if (prev[id]) {
+             // Deeply merge stats to be safe
+             merged[id].stats = { ...prev[id].stats, ...merged[id].stats };
+          }
         });
+        
         return merged;
       });
+
       setUnregisteredStats(data.unregistered || {});
       setLastRefreshed(new Date());
     });
 
-    socket.on('report_submitted', (data) => {
-      if (!data || !data.warehouse_id) return;
+    socket.on('report_count_updated', (data) => {
+      if (!data || !data.warehouse_id || isHistorical) return;
       setWarehouseStats(prev => {
         if (!prev[data.warehouse_id]) return prev;
         return {
           ...prev,
           [data.warehouse_id]: {
             ...prev[data.warehouse_id],
-            active_reports: (prev[data.warehouse_id].active_reports || 0) + 1
-          }
-        };
-      });
-    });
-
-    socket.on('report_resolved', (data) => {
-      if (!data || !data.warehouse_id) return;
-      setWarehouseStats(prev => {
-        if (!prev[data.warehouse_id]) return prev;
-        const current = prev[data.warehouse_id].active_reports || 0;
-        return {
-          ...prev,
-          [data.warehouse_id]: {
-            ...prev[data.warehouse_id],
-            active_reports: Math.max(0, current - 1)
+            active_reports: data.count
           }
         };
       });

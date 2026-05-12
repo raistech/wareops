@@ -136,23 +136,14 @@ router.get('/reports', (req, res) => {
 router.put('/reports/:id/status', (req, res) => {
     try {
         const { status } = req.body;
-        const report = db.prepare('SELECT warehouse_id, status FROM reports WHERE id = ?').get(req.params.id);
+        const report = db.prepare('SELECT warehouse_id FROM reports WHERE id = ?').get(req.params.id);
         
         if (report) {
             db.prepare('UPDATE reports SET status = ? WHERE id = ?').run(status, req.params.id);
-            
-            // Notification logic
+            // Refresh stats to ensure client gets the final verified count
             if (req.io) {
-                const isInactive = ['resolved', 'rejected'].includes(status);
-                const wasActive = ['pending', 'received'].includes(report.status);
-                const isActive = ['pending', 'received'].includes(status);
-                const wasInactive = ['resolved', 'rejected'].includes(report.status);
-
-                if (isInactive && wasActive) {
-                    req.io.emit('report_resolved', { warehouse_id: report.warehouse_id });
-                } else if (isActive && wasInactive) {
-                    req.io.emit('report_submitted', { warehouse_id: report.warehouse_id });
-                }
+                const activeReports = db.prepare("SELECT COUNT(*) as count FROM reports WHERE warehouse_id = ? AND status IN ('pending', 'received')").get(report.warehouse_id);
+                req.io.emit('report_count_updated', { warehouse_id: report.warehouse_id, count: activeReports.count || 0 });
             }
         }
         res.json({ success: true });
@@ -163,11 +154,12 @@ router.put('/reports/:id/status', (req, res) => {
 
 router.delete('/reports/:id', (req, res) => {
     try {
-        const report = db.prepare('SELECT warehouse_id, status FROM reports WHERE id = ?').get(req.params.id);
+        const report = db.prepare('SELECT warehouse_id FROM reports WHERE id = ?').get(req.params.id);
         if (report) {
             db.prepare('DELETE FROM reports WHERE id = ?').run(req.params.id);
-            if (req.io && ['pending', 'received'].includes(report.status)) {
-                req.io.emit('report_resolved', { warehouse_id: report.warehouse_id });
+            if (req.io) {
+                const activeReports = db.prepare("SELECT COUNT(*) as count FROM reports WHERE warehouse_id = ? AND status IN ('pending', 'received')").get(report.warehouse_id);
+                req.io.emit('report_count_updated', { warehouse_id: report.warehouse_id, count: activeReports.count || 0 });
             }
         }
         res.json({ success: true });

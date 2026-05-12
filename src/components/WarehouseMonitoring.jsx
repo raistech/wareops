@@ -64,7 +64,7 @@ export const WarehouseMonitoring = ({
                       {w.avg_rating} <span className="text-yellow-400 opacity-60">({w.total_reviews})</span>
                     </div>
                   )}
-                  {isOnline && avgCombined > 0 && (
+                  {avgCombined > 0 && (
                     <>
                       {avgCombined <= 28 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
