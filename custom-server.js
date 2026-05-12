@@ -54,8 +54,10 @@ const refreshWarehouseAnalytics = (id) => {
             
             const data = childDb.prepare(`
                 SELECT 
-                    SUM(CASE WHEN type='M' AND status NOT IN ('finished', 'cancelled') THEN 1 ELSE 0 END) as muat_q,
-                    SUM(CASE WHEN type='B' AND status NOT IN ('finished', 'cancelled') THEN 1 ELSE 0 END) as bongkar_q,
+                    SUM(CASE WHEN type='M' AND status='waiting' THEN 1 ELSE 0 END) as muat_waiting,
+                    SUM(CASE WHEN type='M' AND status='processing' THEN 1 ELSE 0 END) as muat_processing,
+                    SUM(CASE WHEN type='B' AND status='waiting' THEN 1 ELSE 0 END) as bongkar_waiting,
+                    SUM(CASE WHEN type='B' AND status='processing' THEN 1 ELSE 0 END) as bongkar_processing,
                     SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
                     SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today,
                     SUM(CASE WHEN type='M' AND status='finished' THEN 1 ELSE 0 END) as muat_lifetime,
@@ -71,9 +73,11 @@ const refreshWarehouseAnalytics = (id) => {
 
             if (!warehouseStats[id].stats) warehouseStats[id].stats = {};
             
-            // Live Queues
-            warehouseStats[id].stats.muat_waiting = data.muat_q || 0;
-            warehouseStats[id].stats.bongkar_waiting = data.bongkar_q || 0;
+            // Live Queues & Processing
+            warehouseStats[id].stats.muat_waiting = data.muat_waiting || 0;
+            warehouseStats[id].stats.muat_processing = data.muat_processing || 0;
+            warehouseStats[id].stats.bongkar_waiting = data.bongkar_waiting || 0;
+            warehouseStats[id].stats.bongkar_processing = data.bongkar_processing || 0;
             warehouseStats[id].stats.finished_muat_today = data.muat_today || 0;
             warehouseStats[id].stats.finished_bongkar_today = data.bongkar_today || 0;
             
