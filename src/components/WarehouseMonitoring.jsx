@@ -58,7 +58,7 @@ export const WarehouseMonitoring = ({
                       {w.avg_rating} <span className="text-yellow-400 opacity-60">({w.total_reviews})</span>
                     </div>
                   )}
-                  {isOnline && stats.avg_waiting < 10 && (
+                  {isOnline && stats.avg_waiting > 0 && stats.avg_waiting < 30 && (
                     <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
                   )}
                   {w.active_reports > 0 && (

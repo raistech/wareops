@@ -1,12 +1,17 @@
 'use client';
 
 import { Trash2, CheckCircle, Clock, XCircle, User, Phone, Tag, Calendar, Image as ImageIcon } from 'lucide-react';
+import { warehouseOptions } from '../../app/admin/constants';
 
 export const ReportManagement = ({ 
   reports, 
   handleUpdateReportStatus, 
   handleDeleteReport 
 }) => {
+  const getWarehouseName = (id) => {
+    return warehouseOptions.find(opt => opt.id === id)?.name || id;
+  };
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
@@ -54,7 +59,7 @@ export const ReportManagement = ({
                     <div className="flex items-center gap-2 text-[10px] font-black text-[#004A99] uppercase mb-1">
                       <Tag size={12} /> {report.category}
                     </div>
-                    <h4 className="text-lg font-bold text-slate-800 leading-tight mb-1">{report.warehouse_id}</h4>
+                    <h4 className="text-lg font-bold text-slate-800 leading-tight mb-1">{getWarehouseName(report.warehouse_id)}</h4>
                     <div className="flex items-center gap-3 text-xs text-slate-400 font-bold">
                       <span className="flex items-center gap-1"><Calendar size={12} /> {new Date(report.created_at).toLocaleString('id-ID')}</span>
                     </div>
