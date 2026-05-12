@@ -47,6 +47,8 @@ export const WarehouseMonitoring = ({
           const stats = w.stats || {};
           const isOnline = w.status === 'online';
           const occPercent = getOccupancyPercent(w.occupancy);
+          const avgCombined = ( (stats.avg_loading || 0) + (stats.avg_unloading || 0) ) / 2;
+
           return (
             <div key={id} className="bg-white rounded-[20px] p-6 shadow-sm border border-[#f1f5f9] hover:-translate-y-1.5 hover:shadow-xl transition-all flex flex-col text-left">
               <div className="flex justify-between items-center mb-5">
@@ -58,15 +60,15 @@ export const WarehouseMonitoring = ({
                       {w.avg_rating} <span className="text-yellow-400 opacity-60">({w.total_reviews})</span>
                     </div>
                   )}
-                  {isOnline && stats.avg_loading > 0 && (
+                  {isOnline && avgCombined > 0 && (
                     <>
-                      {stats.avg_loading <= 20 && (
+                      {avgCombined <= 20 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
                       )}
-                      {stats.avg_loading > 20 && stats.avg_loading <= 30 && (
+                      {avgCombined > 20 && avgCombined <= 30 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-100 uppercase">Normal</span>
                       )}
-                      {stats.avg_loading > 30 && (
+                      {avgCombined > 30 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-100 uppercase">Delayed</span>
                       )}
                     </>
