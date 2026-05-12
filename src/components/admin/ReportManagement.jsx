@@ -97,23 +97,23 @@ export const ReportManagement = ({
                   {report.status === 'pending' && (
                     <button 
                       onClick={() => handleUpdateReportStatus(report.id, 'received')}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-blue-50 text-[#004A99] hover:bg-[#004A99] hover:text-white rounded-xl text-[11px] font-black uppercase transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 bg-blue-50 text-[#004A99] hover:bg-[#004A99] hover:text-white rounded-xl text-[10px] sm:text-[11px] font-black uppercase transition-all"
                     >
-                      <Clock size={14} /> Mark Received
+                      <Clock size={14} /> Received
                     </button>
                   )}
                   {report.status !== 'resolved' && (
                     <button 
                       onClick={() => handleUpdateReportStatus(report.id, 'resolved')}
-                      className="flex-1 flex items-center justify-center gap-2 py-2 px-4 bg-green-50 text-green-700 hover:bg-green-700 hover:text-white rounded-xl text-[11px] font-black uppercase transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 bg-green-50 text-green-700 hover:bg-green-700 hover:text-white rounded-xl text-[10px] sm:text-[11px] font-black uppercase transition-all"
                     >
-                      <CheckCircle size={14} /> Mark Resolved
+                      <CheckCircle size={14} /> Resolved
                     </button>
                   )}
                   {report.status === 'pending' && (
                     <button 
                       onClick={() => handleUpdateReportStatus(report.id, 'rejected')}
-                      className="flex items-center justify-center gap-2 py-2 px-4 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-xl text-[11px] font-black uppercase transition-all"
+                      className="flex items-center justify-center gap-1.5 py-2 px-3 sm:px-4 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-xl text-[10px] sm:text-[11px] font-black uppercase transition-all"
                     >
                       <XCircle size={14} /> Reject
                     </button>

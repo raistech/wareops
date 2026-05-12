@@ -226,24 +226,26 @@ export const WarehouseMonitoring = ({
                   <span>Cap: {w.capacity || '0'}</span>
                 </div>
               </div>
-              <div className="flex gap-2 mt-auto">
-                <button 
-                  onClick={() => {
-                    setSelectedWarehouseForReview({ id, name: w.name });
-                    fetchReviews(id);
-                  }}
-                  className="flex-1 flex items-center justify-center p-3.5 bg-white text-[#0f172a] border border-[#e2e8f0] rounded-xl font-bold text-sm hover:bg-slate-50 transition-all"
-                >
-                  Reviews <Star size={14} className="ml-2 text-yellow-500 fill-yellow-500" />
-                </button>
-                <button 
-                  onClick={() => setSelectedWarehouseForReport({ id, name: w.name })}
-                  className="flex-1 flex items-center justify-center p-3.5 bg-white text-red-600 border border-red-100 rounded-xl font-bold text-sm hover:bg-red-50 transition-all"
-                >
-                  Lapor <AlertTriangle size={14} className="ml-2" />
-                </button>
-                <a href={w.url} target="_blank" className="flex-[1.5] flex items-center justify-center p-3.5 bg-[#0f172a] text-white no-underline rounded-xl font-bold text-sm hover:bg-[#004A99] transition-all">
-                  Visit Queue <ExternalLink size={14} className="ml-2" />
+              <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+                <div className="flex gap-2 flex-1">
+                  <button 
+                    onClick={() => {
+                      setSelectedWarehouseForReview({ id, name: w.name });
+                      fetchReviews(id);
+                    }}
+                    className="flex-1 flex items-center justify-center p-2.5 sm:p-3.5 bg-white text-[#0f172a] border border-[#e2e8f0] rounded-xl font-bold text-xs sm:text-sm hover:bg-slate-50 transition-all"
+                  >
+                    Reviews <Star size={12} className="ml-1.5 text-yellow-500 fill-yellow-500" />
+                  </button>
+                  <button 
+                    onClick={() => setSelectedWarehouseForReport({ id, name: w.name })}
+                    className="flex-1 flex items-center justify-center p-2.5 sm:p-3.5 bg-white text-red-600 border border-red-100 rounded-xl font-bold text-xs sm:text-sm hover:bg-red-50 transition-all"
+                  >
+                    Lapor <AlertTriangle size={12} className="ml-1.5" />
+                  </button>
+                </div>
+                <a href={w.url} target="_blank" className="flex-1 sm:flex-[1.5] flex items-center justify-center p-2.5 sm:p-3.5 bg-[#0f172a] text-white no-underline rounded-xl font-bold text-xs sm:text-sm hover:bg-[#004A99] transition-all">
+                  Visit Queue <ExternalLink size={12} className="ml-1.5" />
                 </a>
               </div>
               <div className="mt-2.5 text-[0.65rem] text-[#64748b] flex items-center gap-1">
