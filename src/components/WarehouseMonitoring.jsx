@@ -62,13 +62,13 @@ export const WarehouseMonitoring = ({
                   )}
                   {isOnline && avgCombined > 0 && (
                     <>
-                      {avgCombined <= 20 && (
+                      {avgCombined <= 28 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
                       )}
-                      {avgCombined > 20 && avgCombined <= 30 && (
+                      {avgCombined > 28 && avgCombined <= 35 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-100 uppercase">Normal</span>
                       )}
-                      {avgCombined > 30 && (
+                      {avgCombined > 35 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-100 uppercase">Delayed</span>
                       )}
                     </>
