@@ -12,3 +12,42 @@ body {
   color: rgb(var(--foreground-rgb));
   background: white;
 }
+
+/* Fix for empty paragraphs/double enter from editor */
+.article-content p:empty:before,
+.article-content p br:only-child:before {
+  content: "\00a0";
+}
+
+/* Quill Alignment Support */
+.article-content .ql-align-center {
+  text-align: center;
+}
+.article-content .ql-align-right {
+  text-align: right;
+}
+.article-content .ql-align-justify {
+  text-align: justify;
+}
+.article-content .ql-align-left {
+  text-align: left;
+}
+
+/* Ensure images respect paragraph alignment */
+.article-content p.ql-align-center img {
+  margin-left: auto;
+  margin-right: auto;
+  display: block;
+}
+
+.article-content p.ql-align-right img {
+  margin-left: auto;
+  margin-right: 0;
+  display: block;
+}
+
+.article-content p.ql-align-left img {
+  margin-left: 0;
+  margin-right: auto;
+  display: block;
+}

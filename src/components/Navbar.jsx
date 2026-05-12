@@ -13,6 +13,7 @@ export const Navbar = ({ siteSettings, isMobileMenuOpen, setIsMobileMenuOpen }) 
         <a href="#summary" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Summary</a>
         <a href="#news" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">News</a>
         <a href="#monitoring" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Monitoring</a>
+        <a href="https://cpp.co.id" target="_blank" rel="noopener noreferrer" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Company Web</a>
       </div>
       <button 
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
@@ -25,6 +26,7 @@ export const Navbar = ({ siteSettings, isMobileMenuOpen, setIsMobileMenuOpen }) 
           <a href="#summary" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">Summary</a>
           <a href="#news" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">News</a>
           <a href="#monitoring" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">Monitoring</a>
+          <a href="https://cpp.co.id" target="_blank" rel="noopener noreferrer" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">Company Web</a>
         </div>
       )}
     </nav>

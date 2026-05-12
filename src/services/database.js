@@ -10,11 +10,13 @@ db.exec(`
     CREATE TABLE IF NOT EXISTS blogs (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
+        slug TEXT UNIQUE,
         content TEXT NOT NULL,
         image_url TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+    CREATE INDEX IF NOT EXISTS idx_blogs_slug ON blogs(slug);
 
     CREATE TABLE IF NOT EXISTS banners (
         id INTEGER PRIMARY KEY AUTOINCREMENT,

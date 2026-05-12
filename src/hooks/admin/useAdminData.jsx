@@ -25,6 +25,7 @@ export const useAdminData = (isLoggedIn) => {
   });
 
   const [newBlog, setNewBlog] = useState({ title: '', content: '' });
+  const [editingBlogId, setEditingBlogId] = useState(null);
   const [newEmployee, setNewEmployee] = useState({ name: '', position: '', warehouse_id: 'newgudang', sort_order: 0 });
   const [newBanner, setNewBanner] = useState({ title: '', link_url: '', sort_order: 0 });
   const [uploadImage, setUploadImage] = useState(null);
@@ -141,24 +142,40 @@ export const useAdminData = (isLoggedIn) => {
       formData.append('content', newBlog.content);
       if (uploadImage) formData.append('image', uploadImage);
 
-      const res = await fetch('/api/admin/blogs', {
-        method: 'POST',
+      const url = editingBlogId ? `/api/admin/blogs/${editingBlogId}` : '/api/admin/blogs';
+      const method = editingBlogId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       
       if (res.ok) {
         setNewBlog({ title: '', content: '' });
+        setEditingBlogId(null);
         setUploadImage(null);
-        e.target.reset();
+        if (e.target.reset) e.target.reset();
         await fetchData();
-        showMessage('success', 'Article published successfully!');
+        showMessage('success', editingBlogId ? 'Article updated successfully!' : 'Article published successfully!');
       }
     } catch (err) {
       showMessage('error', 'Network error');
     } finally {
       setLoading(false);
     }
+  };
+
+  const setEditBlog = (blog) => {
+    setNewBlog({ title: blog.title, content: blog.content });
+    setEditingBlogId(blog.id);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const cancelEditBlog = () => {
+    setNewBlog({ title: '', content: '' });
+    setEditingBlogId(null);
+    setUploadImage(null);
   };
 
   const handleCreateEmployee = async (e) => {
@@ -285,6 +302,9 @@ export const useAdminData = (isLoggedIn) => {
     setSiteSettings,
     newBlog,
     setNewBlog,
+    editingBlogId,
+    setEditBlog,
+    cancelEditBlog,
     newEmployee,
     setNewEmployee,
     newBanner,

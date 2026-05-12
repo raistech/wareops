@@ -28,9 +28,12 @@ export const BlogModal = ({ selectedBlog, setSelectedBlog }) => {
           <h2 className="text-3xl md:text-4xl font-black text-[#0f172a] mb-8 leading-tight text-left">
             {selectedBlog.title}
           </h2>
-          <div className="text-slate-600 text-lg leading-relaxed whitespace-pre-wrap text-left">
-            {selectedBlog.content}
-          </div>
+          <div 
+            className="text-slate-600 text-lg leading-relaxed text-left prose prose-slate max-w-none 
+              prose-headings:text-[#0f172a] prose-headings:font-bold 
+              prose-p:mb-4 prose-li:mb-1 prose-strong:text-slate-900"
+            dangerouslySetInnerHTML={{ __html: selectedBlog.content }}
+          />
         </div>
         <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
           <button 

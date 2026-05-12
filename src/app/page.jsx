@@ -16,7 +16,6 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Selection states for modals
-  const [selectedBlog, setSelectedBlog] = useState(null);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [selectedBanner, setSelectedBanner] = useState(null);
   const [selectedWarehouseForReview, setSelectedWarehouseForReview] = useState(null);
@@ -78,7 +77,6 @@ export default function Home() {
       <NewsSection 
         siteSettings={siteSettings}
         blogs={blogs}
-        setSelectedBlog={setSelectedBlog}
       />
 
       <WarehouseMonitoring 
@@ -98,8 +96,6 @@ export default function Home() {
         fetchReviews={fetchReviews}
       />
 
-      <BlogModal selectedBlog={selectedBlog} setSelectedBlog={setSelectedBlog} />
-      
       <EmployeeModal 
         selectedEmployee={selectedEmployee} 
         setSelectedEmployee={setSelectedEmployee} 

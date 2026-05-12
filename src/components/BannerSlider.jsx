@@ -6,7 +6,7 @@ export const BannerSlider = ({ banners, currentBanner, setCurrentBanner, setSele
   return (
     <section className="px-[5%] pb-24 bg-gradient-to-b from-[#f0f9ff] to-[#f1f5f9]">
       <div className="max-w-[1400px] mx-auto relative group">
-        <div className="relative aspect-[21/9] md:aspect-[25/8] w-full overflow-hidden rounded-[40px] shadow-2xl border-4 border-white bg-white">
+        <div className="relative aspect-[16/9] md:aspect-[21/7] w-full overflow-hidden rounded-[40px] shadow-2xl border-4 border-white bg-white">
           <div 
             className="absolute inset-0 flex transition-transform duration-700 ease-in-out" 
             style={{ transform: `translateX(-${currentBanner * 100}%)` }}

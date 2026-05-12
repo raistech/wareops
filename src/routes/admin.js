@@ -21,8 +21,23 @@ const optimizeAndSave = async (buffer, filename) => {
     return filename.replace(path.extname(filename), '.webp');
 };
 
+const slugify = (text) => {
+    return text.toString().toLowerCase()
+        .replace(/\s+/g, '-')           // Replace spaces with -
+        .replace(/[^\w\-]+/g, '')       // Remove all non-word chars
+        .replace(/\-\-+/g, '-')         // Replace multiple - with single -
+        .replace(/^-+/, '')             // Trim - from start of text
+        .replace(/-+$/, '');            // Trim - from end of text
+};
+
 // Apply Auth Middleware to all routes below
-router.use(authMiddleware);
+router.use((req, res, next) => {
+    // Exclude GET blogs and single blog by slug from auth
+    if (req.method === 'GET' && (req.path === '/blogs' || req.path.startsWith('/blogs/slug/'))) {
+        return next();
+    }
+    authMiddleware(req, res, next);
+});
 
 // Simple Auth Route
 router.post('/login', (req, res) => {
@@ -59,6 +74,12 @@ router.get('/blogs', (req, res) => {
     res.json(blogs);
 });
 
+router.get('/blogs/slug/:slug', (req, res) => {
+    const blog = db.prepare('SELECT * FROM blogs WHERE slug = ?').get(req.params.slug);
+    if (!blog) return res.status(404).json({ error: 'Blog not found' });
+    res.json(blog);
+});
+
 router.post('/blogs', upload.single('image'), async (req, res) => {
     try {
         const { title, content } = req.body;
@@ -70,9 +91,41 @@ router.post('/blogs', upload.single('image'), async (req, res) => {
             imageUrl = `/uploads/${optimizedName}`;
         }
 
-        const stmt = db.prepare('INSERT INTO blogs (title, content, image_url) VALUES (?, ?, ?)');
-        const info = stmt.run(title, content, imageUrl);
-        res.json({ id: info.lastInsertRowid, title, imageUrl });
+        let slug = slugify(title);
+        // Check for duplicate slug
+        const existing = db.prepare('SELECT id FROM blogs WHERE slug = ?').get(slug);
+        if (existing) {
+            slug = `${slug}-${Date.now()}`;
+        }
+
+        const stmt = db.prepare('INSERT INTO blogs (title, slug, content, image_url) VALUES (?, ?, ?, ?)');
+        const info = stmt.run(title, slug, content, imageUrl);
+        res.json({ id: info.lastInsertRowid, title, slug, imageUrl });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.put('/blogs/:id', upload.single('image'), async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        const { id } = req.params;
+        
+        const existingBlog = db.prepare('SELECT image_url FROM blogs WHERE id = ?').get(id);
+        if (!existingBlog) return res.status(404).json({ error: 'Blog not found' });
+
+        let imageUrl = existingBlog.image_url;
+        
+        if (req.file) {
+            const filename = Date.now() + path.extname(req.file.originalname);
+            const optimizedName = await optimizeAndSave(req.file.buffer, filename);
+            imageUrl = `/uploads/${optimizedName}`;
+        }
+
+        const stmt = db.prepare('UPDATE blogs SET title = ?, content = ?, image_url = ? WHERE id = ?');
+        stmt.run(title, content, imageUrl, id);
+        
+        res.json({ success: true, title, imageUrl });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -201,6 +254,20 @@ router.delete('/reports/:id', (req, res) => {
             }
         }
         res.json({ success: true });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.post('/upload', upload.single('image'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        
+        const filename = Date.now() + path.extname(req.file.originalname);
+        const optimizedName = await optimizeAndSave(req.file.buffer, filename);
+        const imageUrl = `/uploads/${optimizedName}`;
+
+        res.json({ success: true, url: imageUrl });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

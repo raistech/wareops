@@ -37,6 +37,9 @@ export default function AdminPage() {
     setSiteSettings,
     newBlog,
     setNewBlog,
+    editingBlogId,
+    setEditBlog,
+    cancelEditBlog,
     newEmployee,
     setNewEmployee,
     newBanner,
@@ -112,6 +115,9 @@ export default function AdminPage() {
             loading={loading}
             blogs={blogs}
             deleteItem={deleteItem}
+            editingBlogId={editingBlogId}
+            setEditBlog={setEditBlog}
+            cancelEditBlog={cancelEditBlog}
           />
         )}
 
