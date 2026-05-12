@@ -103,6 +103,15 @@ app.prepare().then(() => {
             }
             const stmt = db.prepare('INSERT INTO reports (warehouse_id, reporter_name, reporter_phone, category, description, photo) VALUES (?, ?, ?, ?, ?, ?)');
             const info = stmt.run(warehouse_id, reporter_name || 'Anonymous', reporter_phone || '', category, description, photo || null);
+            
+            // Real-time notification via socket
+            io.emit('report_submitted', { 
+                warehouse_id, 
+                id: info.lastInsertRowid,
+                category,
+                created_at: new Date()
+            });
+
             res.json({ success: true, id: info.lastInsertRowid });
         } catch (err) {
             res.status(500).json({ error: err.message });

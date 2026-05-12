@@ -111,6 +111,20 @@ export const useWarehouseData = (selectedDate) => {
       setLastRefreshed(new Date());
     });
 
+    socket.on('report_submitted', (data) => {
+      if (!data || !data.warehouse_id) return;
+      setWarehouseStats(prev => {
+        if (!prev[data.warehouse_id]) return prev;
+        return {
+          ...prev,
+          [data.warehouse_id]: {
+            ...prev[data.warehouse_id],
+            active_reports: (prev[data.warehouse_id].active_reports || 0) + 1
+          }
+        };
+      });
+    });
+
     return () => socket.close();
   }, [isHistorical]);
 
