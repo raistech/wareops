@@ -11,8 +11,8 @@ const authMiddleware = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1]; // Expecting "Bearer <token>"
 
-    // Current hardcoded token used in the app
-    const VALID_TOKEN = 'skye-admin-auth-token';
+    // Token from environment variable
+    const VALID_TOKEN = process.env.NEXT_PUBLIC_ADMIN_TOKEN;
 
     if (!token) {
         return res.status(401).json({ error: 'Access denied. No token provided.' });

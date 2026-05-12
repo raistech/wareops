@@ -10,7 +10,7 @@ export const useAdminAuth = () => {
 
   useEffect(() => {
     const token = localStorage.getItem('adminToken');
-    if (token === 'skye-admin-auth-token') {
+    if (token === process.env.NEXT_PUBLIC_ADMIN_TOKEN) {
       setIsLoggedIn(true);
     }
   }, []);

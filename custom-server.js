@@ -8,14 +8,27 @@ const path = require('path');
 const Database = require('better-sqlite3');
 const axios = require('axios');
 require('dotenv').config();
-const childDatabases = {
-    'newgudang': '/root/newgudang/database/waru.db',
-    'gudangkletek': '/root/gudangkletek/database/kletek.db',
-    'gudangrm1': '/root/gudangrm1/database/gudangrawmaterialabba.db',
-    'gudangrm2': '/root/gudangrm2/database/gudangrawmaterialcassaland.db',
-    'gudangrm3': '/root/gudangrm3/database/gudangrawmaterialsumberasia.db',
-    'gudangrm4': '/root/gudangrm4/database/gudangrawmaterialkemasan.db'
-};
+
+const warehousesConfig = require('./src/config/warehouses');
+
+// Build database paths and initial stats dynamically from config
+const childDatabases = {};
+const warehouseStats = {};
+
+Object.entries(warehousesConfig).forEach(([id, config]) => {
+    childDatabases[id] = config.dbPath;
+    warehouseStats[id] = {
+        name: config.name,
+        status: 'offline',
+        stats: null,
+        url: config.url,
+        occupancy: '0%',
+        capacity: '0',
+        actual: '0',
+        lifetime: { loading: 0, unloading: 0 }
+    };
+});
+
 const googleSheets = require('./src/services/googleSheets');
 const adminRoutes = require('./src/routes/admin');
 const db = require('./src/services/database');
@@ -24,14 +37,8 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 const PORT = process.env.PORT || 23670;
 const AUTH_TOKEN = process.env.AUTH_TOKEN;
-const warehouseStats = {
-    'newgudang': { name: 'Gudang Waru', status: 'offline', stats: null, url: 'https://gudangwaru.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
-    'gudangkletek': { name: 'Gudang Kletek', status: 'offline', stats: null, url: 'https://gudangkletek.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
-    'gudangrm1': { name: 'RM Abba', status: 'offline', stats: null, url: 'https://gudangrmabba.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
-    'gudangrm2': { name: 'RM Cassaland', status: 'offline', stats: null, url: 'https://gudangcassaland.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
-    'gudangrm3': { name: 'RM Sumber Asia', status: 'offline', stats: null, url: 'https://gudangsumberasia.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
-    'gudangrm4': { name: 'RM Kemasan', status: 'offline', stats: null, url: 'https://gudangkemasan.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
-};
+const TZ_OFFSET = parseInt(process.env.TIMEZONE_OFFSET || '7');
+
 let unregisteredWarehouses = {};
 
 // Helper to refresh stats for a warehouse from its database
@@ -50,7 +57,7 @@ const refreshWarehouseAnalytics = (id) => {
     if (childDatabases[id]) {
         try {
             const childDb = new Database(childDatabases[id], { readonly: true });
-            const today = new Date(Date.now() + 7 * 3600000).toISOString().split('T')[0];
+            const today = new Date(Date.now() + TZ_OFFSET * 3600000).toISOString().split('T')[0];
             
             const data = childDb.prepare(`
                 SELECT 

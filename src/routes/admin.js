@@ -28,7 +28,7 @@ router.post('/login', (req, res) => {
     const actualPassword = dbPass ? dbPass.value : process.env.ADMIN_PASSWORD;
 
     if (password === actualPassword) {
-        res.json({ success: true, token: 'skye-admin-auth-token' });
+        res.json({ success: true, token: process.env.NEXT_PUBLIC_ADMIN_TOKEN });
     } else {
         res.status(401).json({ error: 'Invalid password' });
     }
