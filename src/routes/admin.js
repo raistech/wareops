@@ -136,7 +136,25 @@ router.get('/reports', (req, res) => {
 router.put('/reports/:id/status', (req, res) => {
     try {
         const { status } = req.body;
-        db.prepare('UPDATE reports SET status = ? WHERE id = ?').run(status, req.params.id);
+        const report = db.prepare('SELECT warehouse_id, status FROM reports WHERE id = ?').get(req.params.id);
+        
+        if (report) {
+            db.prepare('UPDATE reports SET status = ? WHERE id = ?').run(status, req.params.id);
+            
+            // Notification logic
+            if (req.io) {
+                const isInactive = ['resolved', 'rejected'].includes(status);
+                const wasActive = ['pending', 'received'].includes(report.status);
+                const isActive = ['pending', 'received'].includes(status);
+                const wasInactive = ['resolved', 'rejected'].includes(report.status);
+
+                if (isInactive && wasActive) {
+                    req.io.emit('report_resolved', { warehouse_id: report.warehouse_id });
+                } else if (isActive && wasInactive) {
+                    req.io.emit('report_submitted', { warehouse_id: report.warehouse_id });
+                }
+            }
+        }
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -145,7 +163,13 @@ router.put('/reports/:id/status', (req, res) => {
 
 router.delete('/reports/:id', (req, res) => {
     try {
-        db.prepare('DELETE FROM reports WHERE id = ?').run(req.params.id);
+        const report = db.prepare('SELECT warehouse_id, status FROM reports WHERE id = ?').get(req.params.id);
+        if (report) {
+            db.prepare('DELETE FROM reports WHERE id = ?').run(req.params.id);
+            if (req.io && ['pending', 'received'].includes(report.status)) {
+                req.io.emit('report_resolved', { warehouse_id: report.warehouse_id });
+            }
+        }
         res.json({ success: true });
     } catch (err) {
         res.status(500).json({ error: err.message });

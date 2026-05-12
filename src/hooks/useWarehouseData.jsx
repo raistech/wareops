@@ -125,6 +125,21 @@ export const useWarehouseData = (selectedDate) => {
       });
     });
 
+    socket.on('report_resolved', (data) => {
+      if (!data || !data.warehouse_id) return;
+      setWarehouseStats(prev => {
+        if (!prev[data.warehouse_id]) return prev;
+        const current = prev[data.warehouse_id].active_reports || 0;
+        return {
+          ...prev,
+          [data.warehouse_id]: {
+            ...prev[data.warehouse_id],
+            active_reports: Math.max(0, current - 1)
+          }
+        };
+      });
+    });
+
     return () => socket.close();
   }, [isHistorical]);
 

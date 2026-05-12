@@ -45,6 +45,13 @@ app.prepare().then(() => {
     server.use(cors());
     server.use(express.json());
     server.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
+    
+    // Attach io to req
+    server.use((req, res, next) => {
+        req.io = io;
+        next();
+    });
+
     server.use('/api/admin', adminRoutes);
     server.get('/api/stats', (req, res) => {
         try {
