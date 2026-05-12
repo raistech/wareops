@@ -76,15 +76,34 @@ app.prepare().then(() => {
                                 SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today,
                                 SUM(CASE WHEN type='M' AND status='finished' THEN 1 ELSE 0 END) as muat_lifetime,
                                 SUM(CASE WHEN type='B' AND status='finished' THEN 1 ELSE 0 END) as bongkar_lifetime,
-                                AVG(CASE WHEN created_at >= date('now', '-30 days') THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w
+                                -- Daily Averages
+                                AVG(CASE WHEN status='finished' AND created_at LIKE ? THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w_today,
+                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', called_at))/60.0 END) as avg_l_today,
+                                AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', called_at))/60.0 END) as avg_u_today,
+                                -- 30D Averages
+                                AVG(CASE WHEN status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w_30d,
+                                AVG(CASE WHEN type='M' AND status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', finished_at) - strftime('%s', called_at))/60.0 END) as avg_l_30d,
+                                AVG(CASE WHEN type='B' AND status='finished' AND created_at >= date('now', '-30 days') THEN (strftime('%s', finished_at) - strftime('%s', called_at))/60.0 END) as avg_u_30d
                             FROM queues
-                        `).get(`${today}%`, `${today}%`);
+                        `).get(`${today}%`, `${today}%`, `${today}%`, `${today}%`, `${today}%`);
                         if (!results[id].stats) results[id].stats = {};
                         results[id].stats.muat_waiting = data.muat_q || 0;
                         results[id].stats.bongkar_waiting = data.bongkar_q || 0;
                         results[id].stats.finished_muat_today = data.muat_today || 0;
                         results[id].stats.finished_bongkar_today = data.bongkar_today || 0;
-                        results[id].stats.avg_waiting = data.avg_w || 0;
+                        
+                        // Populate results
+                        results[id].stats.avg_waiting_today = data.avg_w_today || 0;
+                        results[id].stats.avg_loading_today = data.avg_l_today || 0;
+                        results[id].stats.avg_unloading_today = data.avg_u_today || 0;
+                        results[id].stats.avg_waiting_30d = data.avg_w_30d || 0;
+                        results[id].stats.avg_loading_30d = data.avg_l_30d || 0;
+                        results[id].stats.avg_unloading_30d = data.avg_u_30d || 0;
+
+                        // Legacy support for older UI components if needed
+                        results[id].stats.avg_waiting = data.avg_w_today || data.avg_w_30d || 0;
+                        results[id].stats.avg_loading = data.avg_l_today || data.avg_l_30d || 0;
+                        results[id].stats.avg_unloading = data.avg_u_today || data.avg_u_30d || 0;
                         results[id].lifetime = {
                             loading: data.muat_lifetime || 0,
                             unloading: data.bongkar_lifetime || 0
@@ -164,9 +183,9 @@ app.prepare().then(() => {
                             SELECT 
                                 SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
                                 SUM(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as bongkar_today,
-                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', COALESCE(called_at, processing_at, finished_at)) - strftime('%s', created_at))/60.0 END) as avg_w,
-                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_l,
-                                AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_u
+                                AVG(CASE WHEN status='finished' AND created_at LIKE ? THEN (strftime('%s', called_at) - strftime('%s', created_at))/60.0 END) as avg_w_today,
+                                AVG(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_l_today,
+                                AVG(CASE WHEN type='B' AND status='finished' AND created_at LIKE ? THEN (strftime('%s', finished_at) - strftime('%s', COALESCE(processing_at, called_at)))/60.0 END) as avg_u_today
                             FROM queues
                         `).get(`${date}%`, `${date}%`, `${date}%`, `${date}%`, `${date}%`);
                         const lifetimeStats = childDb.prepare(`
@@ -182,9 +201,13 @@ app.prepare().then(() => {
                             bongkar_waiting: 0,
                             muat_processing: 0,
                             bongkar_processing: 0,
-                            avg_waiting: dailyStats.avg_w || 0,
-                            avg_loading: dailyStats.avg_l || 0,
-                            avg_unloading: dailyStats.avg_u || 0,
+                            avg_waiting_today: dailyStats.avg_w_today || 0,
+                            avg_loading_today: dailyStats.avg_l_today || 0,
+                            avg_unloading_today: dailyStats.avg_u_today || 0,
+                            // Fallbacks for UI
+                            avg_waiting: dailyStats.avg_w_today || 0,
+                            avg_loading: dailyStats.avg_l_today || 0,
+                            avg_unloading: dailyStats.avg_u_today || 0,
                         };
                         w.lifetime = {
                             loading: lifetimeStats.muat_lifetime || 0,

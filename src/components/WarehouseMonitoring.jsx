@@ -47,7 +47,7 @@ export const WarehouseMonitoring = ({
           const stats = w.stats || {};
           const isOnline = w.status === 'online';
           const occPercent = getOccupancyPercent(w.occupancy);
-          const avgCombined = ( (stats.avg_loading || 0) + (stats.avg_unloading || 0) ) / 2;
+          const avgCombinedToday = ( (stats.avg_loading_today || 0) + (stats.avg_unloading_today || 0) ) / 2;
 
           return (
             <div key={id} className="bg-white rounded-[20px] p-6 shadow-sm border border-[#f1f5f9] hover:-translate-y-1.5 hover:shadow-xl transition-all flex flex-col text-left">
@@ -60,15 +60,15 @@ export const WarehouseMonitoring = ({
                       {w.avg_rating} <span className="text-yellow-400 opacity-60">({w.total_reviews})</span>
                     </div>
                   )}
-                  {isOnline && avgCombined > 0 && (
+                  {isOnline && avgCombinedToday > 0 && (
                     <>
-                      {avgCombined <= 28 && (
+                      {avgCombinedToday <= 28 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
                       )}
-                      {avgCombined > 28 && avgCombined <= 35 && (
+                      {avgCombinedToday > 28 && avgCombinedToday <= 35 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-100 uppercase">Normal</span>
                       )}
-                      {avgCombined > 35 && (
+                      {avgCombinedToday > 35 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-100 uppercase">Delayed</span>
                       )}
                     </>
@@ -127,16 +127,52 @@ export const WarehouseMonitoring = ({
               </div>
               <div className="grid grid-cols-3 gap-2 mb-4">
                 <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
-                  <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_waiting || 0)}m</span>
-                  <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Wait {isHistorical ? '(Day)' : '(30D)'}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter mb-1">Wait Time</span>
+                    <div className="flex justify-around w-full">
+                      <div className="flex flex-col items-center">
+                        <span className="block font-black text-[10px] text-[#004A99] leading-none">{Math.round(stats.avg_waiting_today || 0)}m</span>
+                        <span className="text-[6px] text-slate-400 font-bold uppercase">Day</span>
+                      </div>
+                      <div className="w-px h-4 bg-slate-200"></div>
+                      <div className="flex flex-col items-center">
+                        <span className="block font-black text-[10px] text-slate-500 leading-none">{Math.round(stats.avg_waiting_30d || 0)}m</span>
+                        <span className="text-[6px] text-slate-400 font-bold uppercase">30D</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
-                  <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_loading || 0)}m</span>
-                  <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Load {isHistorical ? '(Day)' : '(30D)'}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter mb-1">Load Time</span>
+                    <div className="flex justify-around w-full">
+                      <div className="flex flex-col items-center">
+                        <span className="block font-black text-[10px] text-[#004A99] leading-none">{Math.round(stats.avg_loading_today || 0)}m</span>
+                        <span className="text-[6px] text-slate-400 font-bold uppercase">Day</span>
+                      </div>
+                      <div className="w-px h-4 bg-slate-200"></div>
+                      <div className="flex flex-col items-center">
+                        <span className="block font-black text-[10px] text-slate-500 leading-none">{Math.round(stats.avg_loading_30d || 0)}m</span>
+                        <span className="text-[6px] text-slate-400 font-bold uppercase">30D</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
                 <div className="text-center p-2.5 bg-[#f8fafc] rounded-xl border border-slate-100">
-                  <span className="block font-bold text-xs text-[#004A99]">{Math.round(stats.avg_unloading || 0)}m</span>
-                  <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter">Unld {isHistorical ? '(Day)' : '(30D)'}</span>
+                  <div className="flex flex-col items-center">
+                    <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter mb-1">Unld Time</span>
+                    <div className="flex justify-around w-full">
+                      <div className="flex flex-col items-center">
+                        <span className="block font-black text-[10px] text-[#004A99] leading-none">{Math.round(stats.avg_unloading_today || 0)}m</span>
+                        <span className="text-[6px] text-slate-400 font-bold uppercase">Day</span>
+                      </div>
+                      <div className="w-px h-4 bg-slate-200"></div>
+                      <div className="flex flex-col items-center">
+                        <span className="block font-black text-[10px] text-slate-500 leading-none">{Math.round(stats.avg_unloading_30d || 0)}m</span>
+                        <span className="text-[6px] text-slate-400 font-bold uppercase">30D</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
