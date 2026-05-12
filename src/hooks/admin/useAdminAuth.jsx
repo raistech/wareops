@@ -48,9 +48,13 @@ export const useAdminAuth = () => {
     if (passwords.next !== passwords.confirm) return alert('New passwords do not match');
     setLoading(true);
     try {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch('/api/admin/change-password', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ currentPassword: passwords.current, newPassword: passwords.next })
       });
       if (res.ok) {

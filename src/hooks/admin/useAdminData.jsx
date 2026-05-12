@@ -33,7 +33,10 @@ export const useAdminData = (isLoggedIn) => {
 
   const fetchData = async () => {
     try {
-      const res = await fetch(`/api/admin/${activeTab}`);
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/${activeTab}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       const data = await res.json();
       if (activeTab === 'blogs') setBlogs(data);
       if (activeTab === 'banners') setBanners(data);
@@ -48,9 +51,13 @@ export const useAdminData = (isLoggedIn) => {
 
   const handleUpdateReportStatus = async (id, status) => {
     try {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch(`/api/admin/reports/${id}/status`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify({ status })
       });
       if (res.ok) {
@@ -65,7 +72,11 @@ export const useAdminData = (isLoggedIn) => {
   const handleDeleteReport = async (id) => {
     if (!confirm('Are you sure you want to delete this report?')) return;
     try {
-      const res = await fetch(`/api/admin/reports/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/reports/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         await fetchData();
         showMessage('success', 'Report deleted');
@@ -89,7 +100,11 @@ export const useAdminData = (isLoggedIn) => {
   const deleteItem = async (id) => {
     if (!confirm('Are you sure you want to delete this?')) return;
     try {
-      const res = await fetch(`/api/admin/${activeTab}/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/${activeTab}/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         await fetchData();
         showMessage('success', 'Item deleted successfully');
@@ -102,7 +117,11 @@ export const useAdminData = (isLoggedIn) => {
   const handleDeleteReview = async (id) => {
     if (!confirm('Are you sure you want to delete this review?')) return;
     try {
-      const res = await fetch(`/api/admin/reviews/${id}`, { method: 'DELETE' });
+      const token = localStorage.getItem('adminToken');
+      const res = await fetch(`/api/admin/reviews/${id}`, { 
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
       if (res.ok) {
         await fetchData();
         showMessage('success', 'Review deleted');
@@ -116,6 +135,7 @@ export const useAdminData = (isLoggedIn) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const token = localStorage.getItem('adminToken');
       const formData = new FormData();
       formData.append('title', newBlog.title);
       formData.append('content', newBlog.content);
@@ -123,6 +143,7 @@ export const useAdminData = (isLoggedIn) => {
 
       const res = await fetch('/api/admin/blogs', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       
@@ -144,6 +165,7 @@ export const useAdminData = (isLoggedIn) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const token = localStorage.getItem('adminToken');
       const formData = new FormData();
       formData.append('name', newEmployee.name);
       formData.append('position', newEmployee.position);
@@ -153,6 +175,7 @@ export const useAdminData = (isLoggedIn) => {
 
       const res = await fetch('/api/admin/employees', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       
@@ -175,6 +198,7 @@ export const useAdminData = (isLoggedIn) => {
     if (!uploadImage) return alert('Please select a banner image');
     setLoading(true);
     try {
+      const token = localStorage.getItem('adminToken');
       const formData = new FormData();
       formData.append('title', newBanner.title);
       formData.append('link_url', newBanner.link_url);
@@ -184,6 +208,7 @@ export const useAdminData = (isLoggedIn) => {
 
       const res = await fetch('/api/admin/banners', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       
@@ -205,9 +230,13 @@ export const useAdminData = (isLoggedIn) => {
     e.preventDefault();
     setLoading(true);
     try {
+      const token = localStorage.getItem('adminToken');
       const res = await fetch('/api/admin/settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
         body: JSON.stringify(siteSettings)
       });
       if (res.ok) showMessage('success', 'Settings saved successfully');
@@ -224,10 +253,12 @@ export const useAdminData = (isLoggedIn) => {
     
     setLoading(true);
     try {
+      const token = localStorage.getItem('adminToken');
       const formData = new FormData();
       formData.append('image', file);
       const res = await fetch('/api/admin/settings/icon', {
         method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       const data = await res.json();

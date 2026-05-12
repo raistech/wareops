@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../services/database');
 const multer = require('multer');
 const path = require('path');
+const authMiddleware = require('../middleware/auth');
 
 // Storage config for uploads
 const storage = multer.diskStorage({
@@ -14,6 +15,9 @@ const storage = multer.diskStorage({
     }
 });
 const upload = multer({ storage });
+
+// Apply Auth Middleware to all routes below
+router.use(authMiddleware);
 
 // Simple Auth Route
 router.post('/login', (req, res) => {
