@@ -5,5 +5,5 @@ export const warehouseOptions = [
   { id: 'gudangrm2', name: 'RM Cassaland' },
   { id: 'gudangrm3', name: 'RM Sumber Asia' },
   { id: 'gudangrm4', name: 'RM Kemasan' },
-  { id: 'gudangpabrik', name: 'RM Pabrik' }
+  { id: 'gudangpabrik', name: 'RM PABRIK' }
 ];

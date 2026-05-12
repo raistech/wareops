@@ -31,7 +31,7 @@ const warehouseStats = {
     'gudangrm2': { name: 'RM Cassaland', status: 'offline', stats: null, url: 'https://gudangcassaland.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
     'gudangrm3': { name: 'RM Sumber Asia', status: 'offline', stats: null, url: 'https://gudangsumberasia.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
     'gudangrm4': { name: 'RM Kemasan', status: 'offline', stats: null, url: 'https://gudangkemasan.my.id', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
-    'gudangpabrik': { name: 'RM Pabrik', status: 'offline', stats: null, url: '#', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
+    'gudangpabrik': { name: 'RM PABRIK', status: 'offline', stats: null, url: '#', occupancy: '0%', capacity: '0', actual: '0', lifetime: { loading: 0, unloading: 0 } },
 };
 let unregisteredWarehouses = {};
 app.prepare().then(() => {
@@ -141,6 +141,7 @@ app.prepare().then(() => {
                 );
                 if (matchKey) {
                     const data = occupancyData[matchKey];
+                    w.name = matchKey; // Sync name with sheet casing
                     w.occupancy = data.occupancy;
                     w.capacity = data.capacity;
                     w.actual = data.actual;
@@ -266,10 +267,11 @@ app.prepare().then(() => {
                 );
                 if (matchKey) {
                     const data = occupancyData[matchKey];
+                    warehouseStats[id].name = matchKey; // Sync name with sheet casing
                     warehouseStats[id].occupancy = data.occupancy;
                     warehouseStats[id].capacity = data.capacity;
                     warehouseStats[id].actual = data.actual;
-                    console.log(`[SYNC] ${id} (${nameInStats}): Occ=${data.occupancy}, Act=${data.actual}, Cap=${data.capacity}`);
+                    console.log(`[SYNC] ${id} (${matchKey}): Occ=${data.occupancy}, Act=${data.actual}, Cap=${data.capacity}`);
                 } else {
                     console.log(`[SYNC] No match for ${id} (${nameInStats}) in sheets`);
                 }
