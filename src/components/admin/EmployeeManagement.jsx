@@ -24,7 +24,7 @@ export const EmployeeManagement = ({
               type="text" 
               value={newEmployee.name} 
               onChange={(e) => setNewEmployee({...newEmployee, name: e.target.value})} 
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               required 
               disabled={loading} 
             />
@@ -35,7 +35,7 @@ export const EmployeeManagement = ({
               type="text" 
               value={newEmployee.position} 
               onChange={(e) => setNewEmployee({...newEmployee, position: e.target.value})} 
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               required 
               disabled={loading} 
             />
@@ -45,7 +45,7 @@ export const EmployeeManagement = ({
             <select 
               value={newEmployee.warehouse_id} 
               onChange={(e) => setNewEmployee({...newEmployee, warehouse_id: e.target.value})} 
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]"
+              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]"
             >
               {warehouseOptions.map(opt => <option key={opt.id} value={opt.id}>{opt.name}</option>)}
             </select>
@@ -55,7 +55,7 @@ export const EmployeeManagement = ({
             <input 
               type="file" 
               onChange={(e) => setUploadImage(e.target.files[0])} 
-              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#004A99] hover:file:bg-blue-100" 
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#C5A059] hover:file:bg-blue-100" 
               disabled={loading} 
             />
           </div>
@@ -75,13 +75,13 @@ export const EmployeeManagement = ({
         {employees.length === 0 && <p className="text-slate-400 italic">No staff added yet.</p>}
         {employees.map(emp => (
           <div key={emp.id} className="bg-white p-4 rounded-xl shadow-sm flex gap-4 items-center">
-            <div className="w-14 h-14 bg-slate-200 rounded-full overflow-hidden flex-shrink-0 border-2 border-[#004A99]">
+            <div className="w-14 h-14 bg-slate-200 rounded-full overflow-hidden flex-shrink-0 border-2 border-[#C5A059]">
               {emp.image_url ? <img src={emp.image_url} className="w-full h-full object-cover" alt="" /> : <Users className="w-full h-full p-3 text-slate-400" />}
             </div>
             <div className="flex-1">
               <h4 className="font-bold text-slate-800">{emp.name}</h4>
               <p className="text-xs text-slate-500 font-medium uppercase tracking-wider">{emp.position}</p>
-              <div className="flex items-center gap-1 mt-1 text-[10px] text-[#004A99] font-bold uppercase">
+              <div className="flex items-center gap-1 mt-1 text-[10px] text-[#C5A059] font-bold uppercase">
                 <Building size={10} /> {warehouseOptions.find(o => o.id === emp.warehouse_id)?.name || 'Unknown'}
               </div>
             </div>

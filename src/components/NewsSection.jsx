@@ -27,16 +27,16 @@ export const NewsSection = ({ siteSettings, blogs }) => {
                   )}
                 </div>
                 <div className="p-8 flex flex-col flex-1 text-left">
-                  <div className="text-[0.7rem] font-bold text-[#E30613] uppercase mb-3 tracking-wider">
+                  <div className="text-[0.7rem] font-bold text-[#996515] uppercase mb-3 tracking-wider">
                     {new Date(blog.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                   </div>
-                  <h3 className="text-xl font-bold text-slate-800 mb-4 line-clamp-2 group-hover:text-[#004A99] transition-colors leading-snug">
+                  <h3 className="text-xl font-bold text-slate-800 mb-4 line-clamp-2 group-hover:text-[#C5A059] transition-colors leading-snug">
                     {blog.title}
                   </h3>
                   <p className="text-slate-500 text-sm line-clamp-3 mb-8 flex-1 leading-relaxed">
                     {blog.content.replace(/<[^>]*>?/gm, ' ').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()}
                   </p>
-                  <div className="text-[#004A99] font-bold text-sm flex items-center gap-2 group-hover:translate-x-1 transition-transform">
+                  <div className="text-[#C5A059] font-bold text-sm flex items-center gap-2 group-hover:translate-x-1 transition-transform">
                     Read More <ArrowRight size={14} />
                   </div>
                 </div>

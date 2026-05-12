@@ -78,7 +78,7 @@ export default function AdminPage() {
     <div className="min-h-screen bg-slate-100 flex flex-col lg:flex-row">
       {/* Mobile Header */}
       <div className="lg:hidden bg-slate-900 text-white p-4 flex justify-between items-center sticky top-0 z-40">
-        <h1 className="text-lg font-black text-[#E30613]">CP PRIMA ADMIN</h1>
+        <h1 className="text-lg font-black text-[#996515]">CP PRIMA ADMIN</h1>
         <button 
           onClick={() => setIsSidebarOpen(true)}
           className="p-2 hover:bg-slate-800 rounded-lg"

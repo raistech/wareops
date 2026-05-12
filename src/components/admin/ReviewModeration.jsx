@@ -14,7 +14,7 @@ export const ReviewModeration = ({ reviews, handleDeleteReview }) => {
             <div className="flex justify-between items-start mb-4">
               <div className="text-left">
                 <div className="font-bold text-slate-800 text-lg">{review.reviewer_name}</div>
-                <div className="text-xs font-bold text-[#004A99] uppercase">
+                <div className="text-xs font-bold text-[#C5A059] uppercase">
                   {warehouseOptions.find(w => w.id === review.warehouse_id)?.name || review.warehouse_id}
                 </div>
               </div>

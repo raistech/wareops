@@ -28,7 +28,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, se
         lg:translate-x-0 lg:static lg:h-screen
       `}>
         <div className="flex justify-between items-center mb-10">
-          <h1 className="text-xl font-black text-[#E30613]">CP PRIMA ADMIN</h1>
+          <h1 className="text-xl font-black text-[#996515]">CP PRIMA ADMIN</h1>
           <button 
             className="lg:hidden text-slate-400 hover:text-white"
             onClick={() => setIsOpen(false)}
@@ -45,7 +45,7 @@ export const AdminSidebar = ({ activeTab, setActiveTab, handleLogout, isOpen, se
                 setActiveTab(tab.id);
                 setIsOpen(false);
               }}
-              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-[#004A99]' : 'hover:bg-slate-800'}`}
+              className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${activeTab === tab.id ? 'bg-[#C5A059]' : 'hover:bg-slate-800'}`}
             >
               <tab.icon size={20} /> {tab.label}
             </button>

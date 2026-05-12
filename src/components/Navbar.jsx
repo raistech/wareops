@@ -3,17 +3,17 @@ import { X, Menu } from 'lucide-react';
 export const Navbar = ({ siteSettings, isMobileMenuOpen, setIsMobileMenuOpen }) => {
   return (
     <nav className="sticky top-0 bg-white/95 backdrop-blur-md z-[100] border-b border-[#e2e8f0] px-[5%] py-4 flex justify-between items-center">
-      <a href="/" className="flex items-center gap-2 text-[#004A99] font-extrabold text-2xl no-underline">
+      <a href="/" className="flex items-center gap-2 text-[#C5A059] font-extrabold text-2xl no-underline">
         {siteSettings.site_name.split(' ').map((word, i) => (
-          <span key={i} className={i === 1 ? 'text-[#E30613]' : ''}>{word} </span>
+          <span key={i} className={i === 1 ? 'text-[#996515]' : ''}>{word} </span>
         ))}
         {siteSettings.site_name.split(' ').length === 1 && <span>&nbsp;</span>}
       </a>
       <div className="hidden md:flex gap-8">
-        <a href="#summary" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Summary</a>
-        <a href="#news" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">News</a>
-        <a href="#monitoring" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Monitoring</a>
-        <a href="https://cpp.co.id" target="_blank" rel="noopener noreferrer" className="text-[#0f172a] font-medium no-underline hover:text-[#004A99] transition-colors">Company Web</a>
+        <a href="#summary" className="text-[#0f172a] font-medium no-underline hover:text-[#C5A059] transition-colors">Summary</a>
+        <a href="#news" className="text-[#0f172a] font-medium no-underline hover:text-[#C5A059] transition-colors">News</a>
+        <a href="#monitoring" className="text-[#0f172a] font-medium no-underline hover:text-[#C5A059] transition-colors">Monitoring</a>
+        <a href="https://cpp.co.id" target="_blank" rel="noopener noreferrer" className="text-[#0f172a] font-medium no-underline hover:text-[#C5A059] transition-colors">Company Web</a>
       </div>
       <button 
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}

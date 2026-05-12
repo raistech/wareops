@@ -15,7 +15,7 @@ export const ReportManagement = ({
   const getStatusColor = (status) => {
     switch (status) {
       case 'pending': return 'bg-yellow-100 text-yellow-700 border-yellow-200';
-      case 'received': return 'bg-blue-100 text-[#004A99] border-blue-200';
+      case 'received': return 'bg-blue-100 text-[#C5A059] border-blue-200';
       case 'resolved': return 'bg-green-100 text-green-700 border-green-200';
       case 'rejected': return 'bg-red-100 text-red-700 border-red-200';
       default: return 'bg-slate-100 text-slate-700';
@@ -56,7 +56,7 @@ export const ReportManagement = ({
               <div className="flex-1 p-6 flex flex-col">
                 <div className="flex justify-between items-start mb-4">
                   <div>
-                    <div className="flex items-center gap-2 text-[10px] font-black text-[#004A99] uppercase mb-1">
+                    <div className="flex items-center gap-2 text-[10px] font-black text-[#C5A059] uppercase mb-1">
                       <Tag size={12} /> {report.category}
                     </div>
                     <h4 className="text-lg font-bold text-slate-800 leading-tight mb-1">{getWarehouseName(report.warehouse_id)}</h4>
@@ -97,7 +97,7 @@ export const ReportManagement = ({
                   {report.status === 'pending' && (
                     <button 
                       onClick={() => handleUpdateReportStatus(report.id, 'received')}
-                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 bg-blue-50 text-[#004A99] hover:bg-[#004A99] hover:text-white rounded-xl text-[10px] sm:text-[11px] font-black uppercase transition-all"
+                      className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 sm:px-4 bg-blue-50 text-[#C5A059] hover:bg-[#C5A059] hover:text-white rounded-xl text-[10px] sm:text-[11px] font-black uppercase transition-all"
                     >
                       <Clock size={14} /> Received
                     </button>

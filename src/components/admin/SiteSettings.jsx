@@ -20,7 +20,7 @@ export const SiteSettings = ({
         <form onSubmit={handleSaveSettings} className="space-y-8">
           {/* Branding Section */}
           <div className="space-y-4">
-            <h4 className="font-bold text-[#004A99] border-b pb-2 text-left">Website Branding</h4>
+            <h4 className="font-bold text-[#C5A059] border-b pb-2 text-left">Website Branding</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label className="block text-sm font-bold text-slate-600 mb-1">Navbar Name</label>
@@ -28,7 +28,7 @@ export const SiteSettings = ({
                   type="text" 
                   value={siteSettings.site_name} 
                   onChange={(e) => setSiteSettings({...siteSettings, site_name: e.target.value})} 
-                  className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+                  className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
                 />
               </div>
               <div>
@@ -37,7 +37,7 @@ export const SiteSettings = ({
                   type="text" 
                   value={siteSettings.site_title} 
                   onChange={(e) => setSiteSettings({...siteSettings, site_title: e.target.value})} 
-                  className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+                  className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
                 />
               </div>
             </div>
@@ -47,7 +47,7 @@ export const SiteSettings = ({
                 type="text" 
                 value={siteSettings.company_name} 
                 onChange={(e) => setSiteSettings({...siteSettings, company_name: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               />
             </div>
             <div>
@@ -61,7 +61,7 @@ export const SiteSettings = ({
                 <input 
                   type="file" 
                   onChange={handleUploadIcon} 
-                  className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#004A99] hover:file:bg-blue-100" 
+                  className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#C5A059] hover:file:bg-blue-100" 
                 />
               </div>
             </div>
@@ -69,14 +69,14 @@ export const SiteSettings = ({
 
           {/* Hero Section */}
           <div className="space-y-4">
-            <h4 className="font-bold text-[#004A99] border-b pb-2 text-left">Hero Section</h4>
+            <h4 className="font-bold text-[#C5A059] border-b pb-2 text-left">Hero Section</h4>
             <div>
               <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
               <input 
                 type="text" 
                 value={siteSettings.hero_title} 
                 onChange={(e) => setSiteSettings({...siteSettings, hero_title: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               />
             </div>
             <div>
@@ -84,21 +84,21 @@ export const SiteSettings = ({
               <textarea 
                 value={siteSettings.hero_description} 
                 onChange={(e) => setSiteSettings({...siteSettings, hero_description: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99] h-24"
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059] h-24"
               ></textarea>
             </div>
           </div>
 
           {/* Overview Section */}
           <div className="space-y-4">
-            <h4 className="font-bold text-[#004A99] border-b pb-2 text-left">Logistics Overview</h4>
+            <h4 className="font-bold text-[#C5A059] border-b pb-2 text-left">Logistics Overview</h4>
             <div>
               <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
               <input 
                 type="text" 
                 value={siteSettings.overview_title} 
                 onChange={(e) => setSiteSettings({...siteSettings, overview_title: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               />
             </div>
             <div>
@@ -106,21 +106,21 @@ export const SiteSettings = ({
               <textarea 
                 value={siteSettings.overview_description} 
                 onChange={(e) => setSiteSettings({...siteSettings, overview_description: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99] h-20"
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059] h-20"
               ></textarea>
             </div>
           </div>
 
           {/* News Section */}
           <div className="space-y-4">
-            <h4 className="font-bold text-[#004A99] border-b pb-2 text-left">News & Articles</h4>
+            <h4 className="font-bold text-[#C5A059] border-b pb-2 text-left">News & Articles</h4>
             <div>
               <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
               <input 
                 type="text" 
                 value={siteSettings.news_title} 
                 onChange={(e) => setSiteSettings({...siteSettings, news_title: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               />
             </div>
             <div>
@@ -128,21 +128,21 @@ export const SiteSettings = ({
               <textarea 
                 value={siteSettings.news_description} 
                 onChange={(e) => setSiteSettings({...siteSettings, news_description: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99] h-20"
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059] h-20"
               ></textarea>
             </div>
           </div>
 
           {/* Monitoring Section */}
           <div className="space-y-4">
-            <h4 className="font-bold text-[#004A99] border-b pb-2 text-left">Warehouse Monitoring Grid</h4>
+            <h4 className="font-bold text-[#C5A059] border-b pb-2 text-left">Warehouse Monitoring Grid</h4>
             <div>
               <label className="block text-sm font-bold text-slate-600 mb-1">Title</label>
               <input 
                 type="text" 
                 value={siteSettings.monitoring_title} 
                 onChange={(e) => setSiteSettings({...siteSettings, monitoring_title: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               />
             </div>
             <div>
@@ -150,7 +150,7 @@ export const SiteSettings = ({
               <textarea 
                 value={siteSettings.monitoring_description} 
                 onChange={(e) => setSiteSettings({...siteSettings, monitoring_description: e.target.value})} 
-                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99] h-20"
+                className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059] h-20"
               ></textarea>
             </div>
           </div>

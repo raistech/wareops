@@ -22,7 +22,7 @@ export const BlogModal = ({ selectedBlog, setSelectedBlog }) => {
           </button>
         </div>
         <div className="p-8 md:p-12 overflow-y-auto text-left">
-          <div className="text-sm font-bold text-[#E30613] uppercase mb-4 tracking-widest text-left">
+          <div className="text-sm font-bold text-[#996515] uppercase mb-4 tracking-widest text-left">
             {new Date(selectedBlog.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
           </div>
           <h2 className="text-3xl md:text-4xl font-black text-[#0f172a] mb-8 leading-tight text-left">
@@ -38,7 +38,7 @@ export const BlogModal = ({ selectedBlog, setSelectedBlog }) => {
         <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end">
           <button 
             onClick={() => setSelectedBlog(null)}
-            className="px-8 py-3 bg-[#0f172a] text-white rounded-full font-bold hover:bg-[#004A99] transition-all text-left"
+            className="px-8 py-3 bg-[#0f172a] text-white rounded-full font-bold hover:bg-[#C5A059] transition-all text-left"
           >
             Close Article
           </button>
@@ -116,7 +116,7 @@ export const BannerModal = ({ selectedBanner, setSelectedBanner }) => {
               <a 
                 href={selectedBanner.link_url} 
                 target="_blank"
-                className="flex-1 md:flex-none px-8 py-4 bg-[#004A99] text-white rounded-2xl font-bold hover:bg-blue-900 transition-all shadow-lg flex items-center justify-center gap-2 no-underline"
+                className="flex-1 md:flex-none px-8 py-4 bg-[#C5A059] text-white rounded-2xl font-bold hover:bg-blue-900 transition-all shadow-lg flex items-center justify-center gap-2 no-underline"
               >
                 Visit Link <ExternalLink size={20} />
               </a>
@@ -163,7 +163,7 @@ export const ReviewModal = ({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-6 text-left">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <MessageSquare size={18} className="text-[#004A99]" /> Write a Review
+                <MessageSquare size={18} className="text-[#C5A059]" /> Write a Review
               </h3>
               <form 
                 onSubmit={(e) => {
@@ -197,7 +197,7 @@ export const ReviewModal = ({
                     placeholder="Anonymous"
                     value={newReview.reviewer_name}
                     onChange={(e) => setNewReview({...newReview, reviewer_name: e.target.value})}
-                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#004A99] outline-none font-medium"
+                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#C5A059] outline-none font-medium"
                   />
                 </div>
                 <div>
@@ -206,13 +206,13 @@ export const ReviewModal = ({
                     placeholder="Tell us about your experience..."
                     value={newReview.comment}
                     onChange={(e) => setNewReview({...newReview, comment: e.target.value})}
-                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#004A99] outline-none font-medium h-32 resize-none"
+                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl focus:ring-2 focus:ring-[#C5A059] outline-none font-medium h-32 resize-none"
                   />
                 </div>
                 <button 
                   type="submit"
                   disabled={isSubmittingReview}
-                  className="w-full py-4 bg-[#004A99] text-white rounded-2xl font-bold hover:bg-blue-900 transition-all shadow-lg flex items-center justify-center gap-2"
+                  className="w-full py-4 bg-[#C5A059] text-white rounded-2xl font-bold hover:bg-blue-900 transition-all shadow-lg flex items-center justify-center gap-2"
                 >
                   {isSubmittingReview ? <Loader2 size={20} className="animate-spin" /> : 'Submit Review'}
                 </button>
@@ -343,7 +343,7 @@ export const ReportModal = ({
       <div className="bg-white rounded-[40px] w-full max-w-lg overflow-hidden flex flex-col shadow-2xl animate-in zoom-in duration-300">
         <div className="p-8 border-b border-slate-100 flex justify-between items-center bg-white">
           <div className="text-left">
-            <h2 className="text-2xl font-black text-[#E30613]">Lapor Kendala</h2>
+            <h2 className="text-2xl font-black text-[#996515]">Lapor Kendala</h2>
             <p className="text-sm font-bold text-slate-400 uppercase tracking-widest">{selectedWarehouseForReport.name}</p>
           </div>
           <button 
@@ -369,7 +369,7 @@ export const ReportModal = ({
                     type="text"
                     value={reportForm.reporter_name}
                     onChange={(e) => setReportForm({...reportForm, reporter_name: e.target.value})}
-                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#E30613]"
+                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#996515]"
                     placeholder="Supir / Tamu"
                   />
                 </div>
@@ -379,7 +379,7 @@ export const ReportModal = ({
                     type="text"
                     value={reportForm.reporter_phone}
                     onChange={(e) => setReportForm({...reportForm, reporter_phone: e.target.value})}
-                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#E30613]"
+                    className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#996515]"
                     placeholder="0812..."
                   />
                 </div>
@@ -390,7 +390,7 @@ export const ReportModal = ({
                 <select 
                   value={reportForm.category}
                   onChange={(e) => setReportForm({...reportForm, category: e.target.value})}
-                  className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#E30613] font-bold"
+                  className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#996515] font-bold"
                 >
                   <option>Pelayanan Lambat</option>
                   <option>Kebersihan</option>
@@ -406,7 +406,7 @@ export const ReportModal = ({
                   required
                   value={reportForm.description}
                   onChange={(e) => setReportForm({...reportForm, description: e.target.value})}
-                  className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#E30613] h-32 resize-none"
+                  className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none focus:border-[#996515] h-32 resize-none"
                   placeholder="Ceritakan kendala yang Anda alami secara detail..."
                 />
               </div>
@@ -423,10 +423,10 @@ export const ReportModal = ({
                   />
                   <label 
                     htmlFor="report-photo"
-                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-white hover:border-[#E30613] cursor-pointer transition-all"
+                    className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-slate-200 rounded-2xl bg-white hover:border-[#996515] cursor-pointer transition-all"
                   >
                     {photo ? (
-                      <span className="text-sm font-bold text-[#004A99]">{photo.name}</span>
+                      <span className="text-sm font-bold text-[#C5A059]">{photo.name}</span>
                     ) : (
                       <>
                         <Users size={32} className="text-slate-300 mb-2" />
@@ -440,7 +440,7 @@ export const ReportModal = ({
               <button 
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-4 bg-[#E30613] text-white rounded-2xl font-bold hover:bg-red-800 transition-all shadow-lg flex items-center justify-center gap-2"
+                className="w-full py-4 bg-[#996515] text-white rounded-2xl font-bold hover:bg-red-800 transition-all shadow-lg flex items-center justify-center gap-2"
               >
                 {isSubmitting ? <Loader2 size={20} className="animate-spin" /> : 'Kirim Laporan'}
               </button>

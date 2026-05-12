@@ -23,7 +23,7 @@ export const BannerManagement = ({
               type="text" 
               value={newBanner.title} 
               onChange={(e) => setNewBanner({...newBanner, title: e.target.value})} 
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               disabled={loading} 
             />
           </div>
@@ -34,7 +34,7 @@ export const BannerManagement = ({
               placeholder="https://..." 
               value={newBanner.link_url} 
               onChange={(e) => setNewBanner({...newBanner, link_url: e.target.value})} 
-              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#004A99]" 
+              className="w-full p-3 border border-slate-200 rounded-lg outline-none focus:border-[#C5A059]" 
               disabled={loading} 
             />
           </div>
@@ -43,7 +43,7 @@ export const BannerManagement = ({
             <input 
               type="file" 
               onChange={(e) => setUploadImage(e.target.files[0])} 
-              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#004A99] hover:file:bg-blue-100" 
+              className="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-[#C5A059] hover:file:bg-blue-100" 
               required 
               disabled={loading} 
             />

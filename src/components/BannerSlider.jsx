@@ -4,7 +4,7 @@ export const BannerSlider = ({ banners, currentBanner, setCurrentBanner, setSele
   if (banners.length === 0) return null;
 
   return (
-    <section className="px-[5%] pb-24 bg-gradient-to-b from-[#f0f9ff] to-[#f1f5f9]">
+    <section className="px-[5%] pb-24 bg-gradient-to-b from-[#FDF5E6] to-[#f1f5f9]">
       <div className="max-w-[1400px] mx-auto relative group">
         <div className="relative aspect-[16/9] md:aspect-[21/7] w-full overflow-hidden rounded-[40px] shadow-2xl border-4 border-white bg-white">
           <div 

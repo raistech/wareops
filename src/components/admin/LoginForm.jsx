@@ -6,7 +6,7 @@ export const LoginForm = ({ handleLogin, loginPassword, setLoginPassword, loadin
   return (
     <div className="min-h-screen bg-slate-900 flex items-center justify-center p-6 text-center">
       <div className="bg-white rounded-3xl p-6 md:p-10 w-full max-w-md shadow-2xl">
-        <div className="w-16 h-16 md:w-20 md:h-20 bg-[#E30613]/10 text-[#E30613] rounded-2xl flex items-center justify-center mx-auto mb-6 md:mb-8">
+        <div className="w-16 h-16 md:w-20 md:h-20 bg-[#996515]/10 text-[#996515] rounded-2xl flex items-center justify-center mx-auto mb-6 md:mb-8">
           <Lock size={32} />
         </div>
         <h1 className="text-xl md:text-2xl font-black mb-2 text-slate-800 tracking-tight">ADMIN ACCESS</h1>
@@ -18,7 +18,7 @@ export const LoginForm = ({ handleLogin, loginPassword, setLoginPassword, loadin
             placeholder="Enter Admin Password"
             value={loginPassword}
             onChange={(e) => setLoginPassword(e.target.value)}
-            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-[#004A99] focus:bg-white transition-all text-center text-lg font-bold tracking-widest"
+            className="w-full p-4 bg-slate-50 border border-slate-100 rounded-xl outline-none focus:border-[#C5A059] focus:bg-white transition-all text-center text-lg font-bold tracking-widest"
             required
             autoFocus
           />

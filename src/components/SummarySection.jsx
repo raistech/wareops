@@ -18,13 +18,13 @@ export const SummarySection = ({
         </div>
         <div className="flex flex-col items-end gap-1">
           {isHistorical ? (
-            <div className="flex items-center gap-2 font-bold text-[#004A99] text-sm uppercase tracking-wider">
+            <div className="flex items-center gap-2 font-bold text-[#C5A059] text-sm uppercase tracking-wider">
               <Clock size={16} />
               Historical View
             </div>
           ) : (
-            <div className="flex items-center gap-2 font-bold text-[#E30613] text-sm uppercase tracking-wider">
-              <div className="w-2.5 h-2.5 bg-[#E30613] rounded-full animate-pulse shadow-[0_0_0_0_rgba(227,6,19,0.7)]"></div>
+            <div className="flex items-center gap-2 font-bold text-[#996515] text-sm uppercase tracking-wider">
+              <div className="w-2.5 h-2.5 bg-[#996515] rounded-full animate-pulse shadow-[0_0_0_0_rgba(227,6,19,0.7)]"></div>
               Live Update
             </div>
           )}
@@ -59,9 +59,9 @@ export const SummarySection = ({
             </h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="text-left">
-                <div className="text-[0.65rem] font-black text-[#004A99] uppercase mb-1">Loading</div>
+                <div className="text-[0.65rem] font-black text-[#C5A059] uppercase mb-1">Loading</div>
                 <div className="flex justify-between items-end mb-1">
-                  <span className="text-2xl font-black text-[#004A99]">{summary.totalFinishedLoading}</span>
+                  <span className="text-2xl font-black text-[#C5A059]">{summary.totalFinishedLoading}</span>
                   <span className="text-[0.6rem] font-bold text-slate-400 uppercase">Day</span>
                 </div>
                 <div className="text-[0.65rem] font-bold text-slate-400 border-t border-slate-100 pt-1">
@@ -69,9 +69,9 @@ export const SummarySection = ({
                 </div>
               </div>
               <div className="text-left">
-                <div className="text-[0.65rem] font-black text-[#E30613] uppercase mb-1">Unloading</div>
+                <div className="text-[0.65rem] font-black text-[#996515] uppercase mb-1">Unloading</div>
                 <div className="flex justify-between items-end mb-1">
-                  <span className="text-2xl font-black text-[#E30613]">{summary.totalFinishedUnloading}</span>
+                  <span className="text-2xl font-black text-[#996515]">{summary.totalFinishedUnloading}</span>
                   <span className="text-[0.6rem] font-bold text-slate-400 uppercase">Day</span>
                 </div>
                 <div className="text-[0.65rem] font-bold text-slate-400 border-t border-slate-100 pt-1">
@@ -96,14 +96,14 @@ export const SummarySection = ({
               <Database size={16} /> Global Occupancy
             </h3>
             <div className="flex justify-between items-end">
-              <span className="text-4xl font-black text-[#004A99]">{summary.totalOccupancy}%</span>
+              <span className="text-4xl font-black text-[#C5A059]">{summary.totalOccupancy}%</span>
               <div className="text-right">
                 <span className="block text-[0.7rem] font-bold text-slate-500">{formatKg(summary.totalActual)} Actual</span>
                 <span className="block text-[0.7rem] font-bold text-slate-400 text-nowrap">of {formatKg(summary.totalCapacity)}</span>
               </div>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#004A99] to-[#E30613] transition-all duration-1000" style={{ width: `${summary.totalOccupancy}%` }}></div>
+              <div className="h-full bg-gradient-to-r from-[#C5A059] to-[#996515] transition-all duration-1000" style={{ width: `${summary.totalOccupancy}%` }}></div>
             </div>
           </div>
         </div>

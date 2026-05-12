@@ -55,10 +55,10 @@ export const WarehouseMonitoring = ({
             type="date" 
             value={selectedDate}
             onChange={(e) => setSelectedDate(e.target.value)}
-            className="flex-1 bg-slate-50 border-none rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-[#004A99] outline-none cursor-pointer"
+            className="flex-1 bg-slate-50 border-none rounded-xl px-4 py-2 text-sm font-bold text-slate-700 focus:ring-2 focus:ring-[#C5A059] outline-none cursor-pointer"
           />
           {isFetchingHistory && (
-            <div className="animate-spin text-[#004A99] mr-2">
+            <div className="animate-spin text-[#C5A059] mr-2">
               <Loader2 size={20} />
             </div>
           )}
@@ -110,7 +110,7 @@ export const WarehouseMonitoring = ({
                 </div>
                 <div className={`flex items-center gap-1.5 text-[0.7rem] font-bold px-2.5 py-1 rounded-full uppercase ${
                   isOnline ? 'bg-[#dcfce7] text-[#166534]' : 
-                  w.status === 'historical' ? 'bg-[#e0f2fe] text-[#0369a1]' : 'bg-[#fee2e2] text-[#991b1b]'
+                  w.status === 'historical' ? 'bg-[#F5F5DC] text-[#0369a1]' : 'bg-[#fee2e2] text-[#991b1b]'
                 }`}>
                   <span className={`w-1.5 h-1.5 rounded-full ${
                     isOnline ? 'bg-[#10b981]' : 
@@ -120,15 +120,15 @@ export const WarehouseMonitoring = ({
                 </div>
               </div>
               <div className="flex gap-3 mb-5">
-                <div className="flex-1 p-4 rounded-2xl text-center bg-[#eff6ff] border border-[#dbeafe]">
+                <div className="flex-1 p-4 rounded-2xl text-center bg-[#FDF5E6] border border-[#F7E7CE]">
                   <div className="flex justify-around items-center mb-1">
                     <div>
-                      <span className="block text-2xl font-black text-[#3b82f6] leading-none mb-1">{stats.muat_waiting || 0}</span>
+                      <span className="block text-2xl font-black text-[#C5A059] leading-none mb-1">{stats.muat_waiting || 0}</span>
                       <span className="text-[0.6rem] font-bold text-[#64748b] uppercase tracking-tighter">Queue</span>
                     </div>
                     <div className="w-px h-8 bg-blue-100 mx-1"></div>
                     <div>
-                      <span className="block text-2xl font-black text-[#3b82f6] leading-none mb-1">{stats.muat_processing || 0}</span>
+                      <span className="block text-2xl font-black text-[#C5A059] leading-none mb-1">{stats.muat_processing || 0}</span>
                       <span className="text-[0.6rem] font-bold text-[#64748b] uppercase tracking-tighter">Process</span>
                     </div>
                   </div>
@@ -159,7 +159,7 @@ export const WarehouseMonitoring = ({
                     <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter mb-1">Wait Time</span>
                     <div className="flex justify-around w-full">
                       <div className="flex flex-col items-center">
-                        <span className="block font-black text-[10px] text-[#004A99] leading-none">{Math.round(stats.avg_waiting_today || 0)}m</span>
+                        <span className="block font-black text-[10px] text-[#C5A059] leading-none">{Math.round(stats.avg_waiting_today || 0)}m</span>
                         <span className="text-[6px] text-slate-400 font-bold uppercase">Day</span>
                       </div>
                       <div className="w-px h-4 bg-slate-200"></div>
@@ -175,7 +175,7 @@ export const WarehouseMonitoring = ({
                     <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter mb-1">Load Time</span>
                     <div className="flex justify-around w-full">
                       <div className="flex flex-col items-center">
-                        <span className="block font-black text-[10px] text-[#004A99] leading-none">{Math.round(stats.avg_loading_today || 0)}m</span>
+                        <span className="block font-black text-[10px] text-[#C5A059] leading-none">{Math.round(stats.avg_loading_today || 0)}m</span>
                         <span className="text-[6px] text-slate-400 font-bold uppercase">Day</span>
                       </div>
                       <div className="w-px h-4 bg-slate-200"></div>
@@ -191,7 +191,7 @@ export const WarehouseMonitoring = ({
                     <span className="text-[0.55rem] text-[#64748b] font-bold uppercase tracking-tighter mb-1">Unld Time</span>
                     <div className="flex justify-around w-full">
                       <div className="flex flex-col items-center">
-                        <span className="block font-black text-[10px] text-[#004A99] leading-none">{Math.round(stats.avg_unloading_today || 0)}m</span>
+                        <span className="block font-black text-[10px] text-[#C5A059] leading-none">{Math.round(stats.avg_unloading_today || 0)}m</span>
                         <span className="text-[6px] text-slate-400 font-bold uppercase">Day</span>
                       </div>
                       <div className="w-px h-4 bg-slate-200"></div>
@@ -204,24 +204,24 @@ export const WarehouseMonitoring = ({
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="text-left p-3.5 bg-[#eff6ff] rounded-2xl border border-blue-50">
+                <div className="text-left p-3.5 bg-[#FDF5E6] rounded-2xl border border-blue-50">
                   <div className="flex justify-between items-end mb-1">
-                    <span className="text-2xl font-black text-[#004A99]">{stats.finished_muat_today || 0}</span>
+                    <span className="text-2xl font-black text-[#C5A059]">{stats.finished_muat_today || 0}</span>
                     <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-tighter">Day</span>
                   </div>
                   <div className="flex justify-between items-center pt-1.5 border-t border-blue-100/50">
                     <span className="text-[0.6rem] font-bold text-slate-500 uppercase">Total Load</span>
-                    <span className="text-[0.7rem] font-black text-[#004A99]">{w.lifetime?.loading || 0}</span>
+                    <span className="text-[0.7rem] font-black text-[#C5A059]">{w.lifetime?.loading || 0}</span>
                   </div>
                 </div>
                 <div className="text-left p-3.5 bg-[#fff1f2] rounded-2xl border border-red-50">
                   <div className="flex justify-between items-end mb-1">
-                    <span className="text-2xl font-black text-[#E30613]">{stats.finished_bongkar_today || 0}</span>
+                    <span className="text-2xl font-black text-[#996515]">{stats.finished_bongkar_today || 0}</span>
                     <span className="text-[0.65rem] font-bold text-slate-400 uppercase tracking-tighter">Day</span>
                   </div>
                   <div className="flex justify-between items-center pt-1.5 border-t border-red-100/50">
                     <span className="text-[0.6rem] font-bold text-slate-500 uppercase">Total Unld</span>
-                    <span className="text-[0.7rem] font-black text-[#E30613]">{w.lifetime?.unloading || 0}</span>
+                    <span className="text-[0.7rem] font-black text-[#996515]">{w.lifetime?.unloading || 0}</span>
                   </div>
                 </div>
               </div>
@@ -268,7 +268,7 @@ export const WarehouseMonitoring = ({
                     Lapor <AlertTriangle size={12} className="ml-1.5" />
                   </button>
                 </div>
-                <a href={w.url} target="_blank" className="flex-1 sm:flex-[1.5] flex items-center justify-center p-2.5 sm:p-3.5 bg-[#0f172a] text-white no-underline rounded-xl font-bold text-xs sm:text-sm hover:bg-[#004A99] transition-all">
+                <a href={w.url} target="_blank" className="flex-1 sm:flex-[1.5] flex items-center justify-center p-2.5 sm:p-3.5 bg-[#0f172a] text-white no-underline rounded-xl font-bold text-xs sm:text-sm hover:bg-[#C5A059] transition-all">
                   Visit Queue <ExternalLink size={12} className="ml-1.5" />
                 </a>
               </div>
@@ -314,7 +314,7 @@ export const WarehouseMonitoring = ({
       {Object.keys(unregisteredStats).length > 0 && (
         <div className="max-w-[1400px] mx-auto mb-10 text-left">
           <div className="flex items-center gap-3 mb-8">
-            <div className="w-1.5 h-8 bg-[#E30613] rounded-full"></div>
+            <div className="w-1.5 h-8 bg-[#996515] rounded-full"></div>
             <div>
               <h3 className="text-xl font-black text-slate-800 m-0">Other Storage Units</h3>
               <p className="text-sm font-bold text-slate-400 uppercase tracking-widest mt-1">Occupancy Tracking Only</p>
