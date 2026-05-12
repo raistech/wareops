@@ -13,8 +13,32 @@ export const WarehouseMonitoring = ({
   setSelectedEmployee, 
   setSelectedWarehouseForReview, 
   setSelectedWarehouseForReport,
-  fetchReviews 
+  fetchReviews,
+  error,
+  fetchCurrentStats
 }) => {
+  if (error) {
+    return (
+      <section className="py-20 px-[5%] bg-white border-t border-slate-100">
+        <div className="max-w-4xl mx-auto text-center py-12 bg-red-50 rounded-[40px] border border-red-100 px-6">
+          <div className="bg-red-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-red-600">
+            <AlertTriangle size={40} />
+          </div>
+          <h3 className="text-2xl font-black text-red-800 mb-3 uppercase">Gagal Memuat Data</h3>
+          <p className="text-red-600 mb-8 font-medium max-w-lg mx-auto leading-relaxed">
+            Maaf, terjadi kesalahan saat mengambil data dari server. Silakan periksa koneksi Anda atau coba lagi beberapa saat lagi.
+          </p>
+          <button 
+            onClick={fetchCurrentStats}
+            className="px-10 py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-sm hover:bg-red-700 transition-all shadow-xl shadow-red-200 active:scale-95"
+          >
+            Coba Lagi Sekarang
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="monitoring" className="pt-24 px-[5%] bg-[#f8fafc]">
       <div className="max-w-[1400px] mx-auto mb-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">

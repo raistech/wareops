@@ -28,7 +28,9 @@ export default function Home() {
     summary,
     lastRefreshed,
     isHistorical,
-    isFetchingHistory
+    isFetchingHistory,
+    error,
+    fetchCurrentStats
   } = useWarehouseData(selectedDate);
 
   const {
@@ -87,6 +89,8 @@ export default function Home() {
         setSelectedDate={setSelectedDate}
         isFetchingHistory={isFetchingHistory}
         isHistorical={isHistorical}
+        error={error}
+        fetchCurrentStats={fetchCurrentStats}
         employees={employees}
         setSelectedEmployee={setSelectedEmployee}
         setSelectedWarehouseForReview={setSelectedWarehouseForReview}

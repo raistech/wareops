@@ -4,17 +4,22 @@ const db = require('../services/database');
 const multer = require('multer');
 const path = require('path');
 const authMiddleware = require('../middleware/auth');
+const sharp = require('sharp');
+const fs = require('fs');
 
-// Storage config for uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => {
-        cb(null, 'public/uploads/');
-    },
-    filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname));
-    }
-});
+// Storage config for uploads - Use memory storage for processing with sharp
+const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
+// Helper function to optimize and save image
+const optimizeAndSave = async (buffer, filename) => {
+    const targetPath = path.join('public/uploads/', filename);
+    await sharp(buffer)
+        .resize(1200, null, { withoutEnlargement: true }) // Limit max width
+        .webp({ quality: 80 }) // Convert to webp with 80% quality
+        .toFile(targetPath.replace(path.extname(targetPath), '.webp'));
+    return filename.replace(path.extname(filename), '.webp');
+};
 
 // Apply Auth Middleware to all routes below
 router.use(authMiddleware);
@@ -54,12 +59,23 @@ router.get('/blogs', (req, res) => {
     res.json(blogs);
 });
 
-router.post('/blogs', upload.single('image'), (req, res) => {
-    const { title, content } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    const stmt = db.prepare('INSERT INTO blogs (title, content, image_url) VALUES (?, ?, ?)');
-    const info = stmt.run(title, content, imageUrl);
-    res.json({ id: info.lastInsertRowid, title, imageUrl });
+router.post('/blogs', upload.single('image'), async (req, res) => {
+    try {
+        const { title, content } = req.body;
+        let imageUrl = null;
+        
+        if (req.file) {
+            const filename = Date.now() + path.extname(req.file.originalname);
+            const optimizedName = await optimizeAndSave(req.file.buffer, filename);
+            imageUrl = `/uploads/${optimizedName}`;
+        }
+
+        const stmt = db.prepare('INSERT INTO blogs (title, content, image_url) VALUES (?, ?, ?)');
+        const info = stmt.run(title, content, imageUrl);
+        res.json({ id: info.lastInsertRowid, title, imageUrl });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 router.delete('/blogs/:id', (req, res) => {
@@ -73,13 +89,21 @@ router.get('/banners', (req, res) => {
     res.json(banners);
 });
 
-router.post('/banners', upload.single('image'), (req, res) => {
-    const { title, link_url, is_active } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    if (!imageUrl) return res.status(400).json({ error: 'Image is required' });
-    const stmt = db.prepare('INSERT INTO banners (title, image_url, link_url, is_active) VALUES (?, ?, ?, ?)');
-    const info = stmt.run(title, imageUrl, link_url, is_active === 'true' ? 1 : 0);
-    res.json({ id: info.lastInsertRowid, imageUrl });
+router.post('/banners', upload.single('image'), async (req, res) => {
+    try {
+        const { title, link_url, is_active } = req.body;
+        if (!req.file) return res.status(400).json({ error: 'Image is required' });
+        
+        const filename = Date.now() + path.extname(req.file.originalname);
+        const optimizedName = await optimizeAndSave(req.file.buffer, filename);
+        const imageUrl = `/uploads/${optimizedName}`;
+
+        const stmt = db.prepare('INSERT INTO banners (title, image_url, link_url, is_active) VALUES (?, ?, ?, ?)');
+        const info = stmt.run(title, imageUrl, link_url, is_active === 'true' ? 1 : 0);
+        res.json({ id: info.lastInsertRowid, imageUrl });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 router.delete('/banners/:id', (req, res) => {
@@ -93,14 +117,24 @@ router.get('/employees', (req, res) => {
     res.json(employees);
 });
 
-router.post('/employees', upload.single('image'), (req, res) => {
-    const { name, position, warehouse_id, sort_order } = req.body;
-    const imageUrl = req.file ? `/uploads/${req.file.filename}` : null;
-    
-    const stmt = db.prepare('INSERT INTO employees (name, position, image_url, warehouse_id, sort_order) VALUES (?, ?, ?, ?, ?)');
-    const info = stmt.run(name, position, imageUrl, warehouse_id, sort_order || 0);
-    
-    res.json({ id: info.lastInsertRowid, name, imageUrl });
+router.post('/employees', upload.single('image'), async (req, res) => {
+    try {
+        const { name, position, warehouse_id, sort_order } = req.body;
+        let imageUrl = null;
+
+        if (req.file) {
+            const filename = Date.now() + path.extname(req.file.originalname);
+            const optimizedName = await optimizeAndSave(req.file.buffer, filename);
+            imageUrl = `/uploads/${optimizedName}`;
+        }
+        
+        const stmt = db.prepare('INSERT INTO employees (name, position, image_url, warehouse_id, sort_order) VALUES (?, ?, ?, ?, ?)');
+        const info = stmt.run(name, position, imageUrl, warehouse_id, sort_order || 0);
+        
+        res.json({ id: info.lastInsertRowid, name, imageUrl });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 router.delete('/employees/:id', (req, res) => {
@@ -200,10 +234,14 @@ router.post('/settings', (req, res) => {
     }
 });
 
-router.post('/settings/icon', upload.single('image'), (req, res) => {
+router.post('/settings/icon', upload.single('image'), async (req, res) => {
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
-        const imageUrl = `/uploads/${req.file.filename}`;
+        
+        const filename = Date.now() + path.extname(req.file.originalname);
+        const optimizedName = await optimizeAndSave(req.file.buffer, filename);
+        const imageUrl = `/uploads/${optimizedName}`;
+
         db.prepare('INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)').run('site_icon', imageUrl);
         res.json({ success: true, imageUrl });
     } catch (err) {

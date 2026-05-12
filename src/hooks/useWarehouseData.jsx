@@ -21,6 +21,7 @@ export const useWarehouseData = (selectedDate) => {
   const [lastRefreshed, setLastRefreshed] = useState(new Date());
   const [isHistorical, setIsHistorical] = useState(false);
   const [isFetchingHistory, setIsFetchingHistory] = useState(false);
+  const [error, setError] = useState(null);
 
   const parseNum = (str) => {
     if (!str) return 0;
@@ -29,16 +30,35 @@ export const useWarehouseData = (selectedDate) => {
 
   const fetchHistoricalData = async (date) => {
     setIsFetchingHistory(true);
+    setError(null);
     try {
       const res = await fetch(`/api/historical-stats?date=${date}`);
+      if (!res.ok) throw new Error('Failed to fetch historical data');
       const data = await res.json();
       setWarehouseStats(data.registered || {});
       setUnregisteredStats(data.unregistered || {});
       setLastRefreshed(new Date());
     } catch (err) {
       console.error('History fetch error:', err);
+      setError(err.message);
     } finally {
       setIsFetchingHistory(false);
+    }
+  };
+
+  const fetchCurrentStats = async () => {
+    setError(null);
+    try {
+      const res = await fetch('/api/stats');
+      if (!res.ok) throw new Error('Failed to fetch real-time stats');
+      const data = await res.json();
+      if (data) {
+        setWarehouseStats(data.registered || {});
+        setUnregisteredStats(data.unregistered || {});
+      }
+    } catch (err) {
+      console.error('Stats fetch error:', err);
+      setError(err.message);
     }
   };
 
@@ -49,15 +69,7 @@ export const useWarehouseData = (selectedDate) => {
       fetchHistoricalData(selectedDate);
     } else {
       setIsHistorical(false);
-      fetch('/api/stats')
-        .then(res => res.json())
-        .then(data => {
-          if (data) {
-            setWarehouseStats(data.registered || {});
-            setUnregisteredStats(data.unregistered || {});
-          }
-        })
-        .catch(err => console.error('Stats fetch error:', err));
+      fetchCurrentStats();
     }
   }, [selectedDate]);
 
@@ -201,6 +213,8 @@ export const useWarehouseData = (selectedDate) => {
     lastRefreshed,
     isHistorical,
     isFetchingHistory,
+    error,
+    fetchCurrentStats,
     setWarehouseStats,
     setUnregisteredStats
   };
