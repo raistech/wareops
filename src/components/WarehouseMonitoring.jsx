@@ -47,7 +47,11 @@ export const WarehouseMonitoring = ({
           const stats = w.stats || {};
           const isOnline = w.status === 'online';
           const occPercent = getOccupancyPercent(w.occupancy);
-          const avgCombinedToday = ( (stats.avg_loading_today || 0) + (stats.avg_unloading_today || 0) ) / 2;
+          
+          // Logic for status label: Use Day if available (>0), otherwise fallback to 30D
+          const effectiveLoading = stats.avg_loading_today > 0 ? stats.avg_loading_today : (stats.avg_loading_30d || 0);
+          const effectiveUnloading = stats.avg_unloading_today > 0 ? stats.avg_unloading_today : (stats.avg_unloading_30d || 0);
+          const avgCombined = (effectiveLoading + effectiveUnloading) / 2;
 
           return (
             <div key={id} className="bg-white rounded-[20px] p-6 shadow-sm border border-[#f1f5f9] hover:-translate-y-1.5 hover:shadow-xl transition-all flex flex-col text-left">
@@ -60,15 +64,15 @@ export const WarehouseMonitoring = ({
                       {w.avg_rating} <span className="text-yellow-400 opacity-60">({w.total_reviews})</span>
                     </div>
                   )}
-                  {isOnline && avgCombinedToday > 0 && (
+                  {isOnline && avgCombined > 0 && (
                     <>
-                      {avgCombinedToday <= 28 && (
+                      {avgCombined <= 28 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-green-50 text-green-800 border border-green-100 uppercase">Optimal</span>
                       )}
-                      {avgCombinedToday > 28 && avgCombinedToday <= 35 && (
+                      {avgCombined > 28 && avgCombined <= 35 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-blue-50 text-blue-800 border border-blue-100 uppercase">Normal</span>
                       )}
-                      {avgCombinedToday > 35 && (
+                      {avgCombined > 35 && (
                         <span className="text-[0.65rem] font-extrabold px-2 py-0.5 rounded bg-red-50 text-red-800 border border-red-100 uppercase">Delayed</span>
                       )}
                     </>
