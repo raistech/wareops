@@ -23,9 +23,9 @@ export const Navbar = ({ siteSettings, isMobileMenuOpen, setIsMobileMenuOpen }) 
       </button>
       {isMobileMenuOpen && (
         <div className="absolute top-full left-0 right-0 bg-white border-b border-slate-200 shadow-xl flex flex-col p-6 gap-6 md:hidden animate-in slide-in-from-top duration-300">
-          <a href="#summary" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">Summary</a>
-          <a href="#news" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">News</a>
-          <a href="#monitoring" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">Monitoring</a>
+          <a href="#summary" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left hover:text-[#C5A059] transition-colors">Summary</a>
+          <a href="#news" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left hover:text-[#C5A059] transition-colors">News</a>
+          <a href="#monitoring" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left hover:text-[#C5A059] transition-colors">Monitoring</a>
           <a href="https://cpp.co.id" target="_blank" rel="noopener noreferrer" onClick={() => setIsMobileMenuOpen(false)} className="text-xl font-bold text-[#0f172a] no-underline text-left">Company Web</a>
         </div>
       )}

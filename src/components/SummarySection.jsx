@@ -41,8 +41,8 @@ export const SummarySection = ({
           <Layers size={120} />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          <div className="space-y-6 text-left">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+          <a href="#monitoring" className="space-y-6 text-left no-underline group hover:bg-slate-50/50 p-2 -m-2 rounded-2xl transition-colors">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 group-hover:text-[#C5A059] transition-colors">
               <Building2 size={16} className="text-left" /> Operational Status
             </h3>
             <div className="flex items-end gap-3">
@@ -52,9 +52,9 @@ export const SummarySection = ({
             <div className="flex items-center gap-2 text-green-600 font-bold text-sm">
               <TrendingUp size={16} /> All Systems Normal
             </div>
-          </div>
-          <div className="space-y-6 text-left">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+          </a>
+          <a href="#monitoring" className="space-y-6 text-left no-underline group hover:bg-slate-50/50 p-2 -m-2 rounded-2xl transition-colors">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 group-hover:text-[#C5A059] transition-colors">
               <Truck size={16} /> Activity Status
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -91,16 +91,16 @@ export const SummarySection = ({
               <span className="text-slate-600 font-bold">{summary.totalQueues} Units</span>
               <span className="text-[0.65rem] text-slate-400 ml-2 uppercase tracking-tighter">In Current Queue</span>
             </div>
-          </div>
-          <div className="space-y-6 text-left">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+          </a>
+          <a href="#monitoring" className="space-y-6 text-left no-underline group hover:bg-slate-50/50 p-2 -m-2 rounded-2xl transition-colors">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 group-hover:text-[#C5A059] transition-colors">
               <Timer size={16} /> 30-Day Avg. Performance
             </h3>
-            <div className="text-4xl font-black text-[#0f172a]">{summary.avgProcessTime} <span className="text-xl font-bold text-slate-400">Min</span></div>
+            <div className="text-4xl font-black text-[#0f172a] group-hover:text-[#C5A059] transition-colors">{summary.avgProcessTime} <span className="text-xl font-bold text-slate-400">Min</span></div>
             <p className="text-xs text-slate-500 leading-relaxed">Average processing time for loading and unloading across all units in the last 30 days.</p>
-          </div>
-          <div className="space-y-6 text-left">
-            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+          </a>
+          <a href="#monitoring" className="space-y-6 text-left no-underline group hover:bg-slate-50/50 p-2 -m-2 rounded-2xl transition-colors">
+            <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2 group-hover:text-[#C5A059] transition-colors">
               <Database size={16} /> Global Occupancy
             </h3>
             <div className="flex justify-between items-end">
@@ -111,9 +111,9 @@ export const SummarySection = ({
               </div>
             </div>
             <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-[#C5A059] to-[#996515] transition-all duration-1000" style={{ width: `${summary.totalOccupancy}%` }}></div>
+              <div className="h-full bg-gradient-to-r from-[#C5A059] to-[#996515] transition-all duration-1000 group-hover:scale-x-105 origin-left" style={{ width: `${summary.totalOccupancy}%` }}></div>
             </div>
-          </div>
+          </a>
         </div>
       </div>
     </section>
