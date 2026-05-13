@@ -16,6 +16,25 @@ const appendReport = async (data) => {
         const dateStr = now.toISOString().split('T')[0];
         const timeStr = now.toISOString().split('T')[1].split('.')[0];
         
+        // Check if headers exist
+        const checkHeader = await sheets.spreadsheets.values.get({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `'COMPLAIN'!A1:A1`,
+        });
+
+        if (!checkHeader.data.values || checkHeader.data.values.length === 0) {
+            // Add headers if empty
+            await sheets.spreadsheets.values.update({
+                spreadsheetId: SPREADSHEET_ID,
+                range: `'COMPLAIN'!A1:F1`,
+                valueInputOption: 'USER_ENTERED',
+                requestBody: {
+                    values: [['WAKTU', 'GUDANG', 'PELAPOR', 'TELEPON', 'KATEGORI', 'DESKRIPSI']]
+                }
+            });
+            console.log(`[SHEETS] Headers added to COMPLAIN sheet`);
+        }
+
         await sheets.spreadsheets.values.append({
             spreadsheetId: SPREADSHEET_ID,
             range: `'COMPLAIN'!A:F`,
