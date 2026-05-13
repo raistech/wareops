@@ -1,6 +1,8 @@
-node_modules/
+*.sqlite
+.DS_Store
 .env
 .next/
-*.sqlite
+credentials.json
+node_modules/
+service-account-key.json
 service-account.json
-.DS_Store
