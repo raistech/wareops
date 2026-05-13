@@ -168,6 +168,16 @@ app.prepare().then(() => {
             const stmt = db.prepare('INSERT INTO reports (warehouse_id, reporter_name, reporter_phone, category, description, photo) VALUES (?, ?, ?, ?, ?, ?)');
             const info = stmt.run(warehouse_id, reporter_name || 'Anonymous', reporter_phone || '', category, description, photo || null);
             
+            // Export to Google Sheets
+            const warehouse_name = warehouseStats[warehouse_id]?.name || warehouse_id;
+            googleSheets.appendReport({
+                warehouse_name,
+                reporter_name: reporter_name || 'Anonymous',
+                reporter_phone: reporter_phone || '',
+                category,
+                description
+            });
+
             // Real-time notification with refreshed count
             refreshWarehouseAnalytics(warehouse_id);
             io.emit('stats_updated', { id: warehouse_id, ...warehouseStats[warehouse_id] });

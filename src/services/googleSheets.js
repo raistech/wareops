@@ -5,9 +5,38 @@ const SPREADSHEET_ID = process.env.SPREADSHEET_ID;
 const SHEET_NAME = process.env.SHEET_NAME;
 const auth = new google.auth.GoogleAuth({
     keyFile: path.join(__dirname, '../../service-account.json'),
-    scopes: ['https://www.googleapis.com/auth/spreadsheets.readonly'],
+    scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 });
 const sheets = google.sheets({ version: 'v4', auth });
+
+const appendReport = async (data) => {
+    try {
+        const { warehouse_name, reporter_name, reporter_phone, category, description } = data;
+        const now = new Date(Date.now() + 7 * 3600000); // WIB
+        const dateStr = now.toISOString().split('T')[0];
+        const timeStr = now.toISOString().split('T')[1].split('.')[0];
+        
+        await sheets.spreadsheets.values.append({
+            spreadsheetId: SPREADSHEET_ID,
+            range: `'COMPLAIN'!A:F`,
+            valueInputOption: 'USER_ENTERED',
+            requestBody: {
+                values: [[
+                    `${dateStr} ${timeStr}`,
+                    warehouse_name,
+                    reporter_name,
+                    reporter_phone,
+                    category,
+                    description
+                ]]
+            }
+        });
+        console.log(`[SHEETS] Report appended to COMPLAIN sheet`);
+    } catch (error) {
+        console.error('[SHEETS SERVICE] Error appending report:', error.message);
+    }
+};
+
 const getOccupancyData = async (targetDate = null) => {
     try {
         const response = await sheets.spreadsheets.values.get({
@@ -77,4 +106,4 @@ const getOccupancyData = async (targetDate = null) => {
         return {};
     }
 };
-module.exports = { getOccupancyData };
+module.exports = { getOccupancyData, appendReport };
