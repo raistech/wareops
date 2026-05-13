@@ -12,7 +12,7 @@ import { BlogModal, EmployeeModal, BannerModal, ReviewModal, ReportModal } from 
 import { Footer } from '../components/Footer';
 
 export default function Home() {
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date()));
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   // Selection states for modals

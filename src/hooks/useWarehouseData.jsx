@@ -67,7 +67,7 @@ export const useWarehouseData = (selectedDate) => {
   };
 
   useEffect(() => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Jakarta' }).format(new Date());
     if (selectedDate !== today) {
       setIsHistorical(true);
       fetchHistoricalData(selectedDate);
