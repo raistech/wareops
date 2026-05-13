@@ -56,7 +56,7 @@ const refreshWarehouseAnalytics = (id) => {
     // 2. Get Performance Averages from Child DB
     if (childDatabases[id]) {
         try {
-            const childDb = new Database(childDatabases[id], { readonly: true });
+            const childDb = new Database(childDatabases[id]);
             const today = new Date(Date.now() + TZ_OFFSET * 3600000).toISOString().split('T')[0];
             
             const data = childDb.prepare(`
@@ -78,6 +78,16 @@ const refreshWarehouseAnalytics = (id) => {
                 FROM queues
             `).get(`${today}%`, `${today}%`, `${today}%`, `${today}%`, `${today}%`);
 
+            const tonnage = childDb.prepare(`
+                SELECT 
+                    SUM(CASE WHEN q.type='M' AND q.status='finished' AND q.created_at LIKE ? THEN i.total_kg ELSE 0 END) / 1000.0 as muat_today,
+                    SUM(CASE WHEN q.type='B' AND q.status='finished' AND q.created_at LIKE ? THEN i.total_kg ELSE 0 END) / 1000.0 as bongkar_today,
+                    SUM(CASE WHEN q.type='M' AND q.status='finished' THEN i.total_kg ELSE 0 END) / 1000.0 as muat_lifetime,
+                    SUM(CASE WHEN q.type='B' AND q.status='finished' THEN i.total_kg ELSE 0 END) / 1000.0 as bongkar_lifetime
+                FROM queues q
+                JOIN items i ON q.id = i.queue_id
+            `).get(`${today}%`, `${today}%`);
+
             if (!warehouseStats[id].stats) warehouseStats[id].stats = {};
             
             // Live Queues & Processing
@@ -87,6 +97,12 @@ const refreshWarehouseAnalytics = (id) => {
             warehouseStats[id].stats.bongkar_processing = data.bongkar_processing || 0;
             warehouseStats[id].stats.finished_muat_today = data.muat_today || 0;
             warehouseStats[id].stats.finished_bongkar_today = data.bongkar_today || 0;
+
+            // Tonnage
+            warehouseStats[id].stats.tonnage_muat_today = tonnage.muat_today || 0;
+            warehouseStats[id].stats.tonnage_bongkar_today = tonnage.bongkar_today || 0;
+            warehouseStats[id].stats.tonnage_muat_lifetime = tonnage.muat_lifetime || 0;
+            warehouseStats[id].stats.tonnage_bongkar_lifetime = tonnage.bongkar_lifetime || 0;
             
             // Analytics
             warehouseStats[id].stats.avg_waiting_today = data.avg_w_today || 0;
@@ -103,7 +119,9 @@ const refreshWarehouseAnalytics = (id) => {
 
             warehouseStats[id].lifetime = {
                 loading: data.muat_lifetime || 0,
-                unloading: data.bongkar_lifetime || 0
+                unloading: data.bongkar_lifetime || 0,
+                tonnage_loading: tonnage.muat_lifetime || 0,
+                tonnage_unloading: tonnage.bongkar_lifetime || 0
             };
             childDb.close();
         } catch (e) {
@@ -191,7 +209,7 @@ app.prepare().then(() => {
                 
                 if (childDatabases[id]) {
                     try {
-                        const childDb = new Database(childDatabases[id], { readonly: true });
+                        const childDb = new Database(childDatabases[id]);
                         const dailyStats = childDb.prepare(`
                             SELECT 
                                 SUM(CASE WHEN type='M' AND status='finished' AND created_at LIKE ? THEN 1 ELSE 0 END) as muat_today,
@@ -204,9 +222,23 @@ app.prepare().then(() => {
                             FROM queues
                         `).get(`${date}%`, `${date}%`, `${date}%`, `${date}%`, `${date}%`, `${date} 23:59:59`, `${date} 23:59:59`);
                         
+                        const historicalTonnage = childDb.prepare(`
+                            SELECT 
+                                SUM(CASE WHEN q.type='M' AND q.status='finished' AND q.created_at LIKE ? THEN i.total_kg ELSE 0 END) / 1000.0 as muat_today,
+                                SUM(CASE WHEN q.type='B' AND q.status='finished' AND q.created_at LIKE ? THEN i.total_kg ELSE 0 END) / 1000.0 as bongkar_today,
+                                SUM(CASE WHEN q.type='M' AND q.status='finished' AND q.created_at <= ? THEN i.total_kg ELSE 0 END) / 1000.0 as muat_lifetime,
+                                SUM(CASE WHEN q.type='B' AND q.status='finished' AND q.created_at <= ? THEN i.total_kg ELSE 0 END) / 1000.0 as bongkar_lifetime
+                            FROM queues q
+                            JOIN items i ON q.id = i.queue_id
+                        `).get(`${date}%`, `${date}%`, `${date} 23:59:59`, `${date} 23:59:59`);
+
                         w.stats = {
                             finished_muat_today: dailyStats.muat_today || 0,
                             finished_bongkar_today: dailyStats.bongkar_today || 0,
+                            tonnage_muat_today: historicalTonnage.muat_today || 0,
+                            tonnage_bongkar_today: historicalTonnage.bongkar_today || 0,
+                            tonnage_muat_lifetime: historicalTonnage.muat_lifetime || 0,
+                            tonnage_bongkar_lifetime: historicalTonnage.bongkar_lifetime || 0,
                             avg_waiting_today: dailyStats.avg_w_today || 0,
                             avg_loading_today: dailyStats.avg_l_today || 0,
                             avg_unloading_today: dailyStats.avg_u_today || 0,
@@ -214,7 +246,12 @@ app.prepare().then(() => {
                             avg_loading: dailyStats.avg_l_today || 0,
                             avg_unloading: dailyStats.avg_u_today || 0,
                         };
-                        w.lifetime = { loading: dailyStats.muat_lifetime || 0, unloading: dailyStats.bongkar_lifetime || 0 };
+                        w.lifetime = { 
+                            loading: dailyStats.muat_lifetime || 0, 
+                            unloading: dailyStats.bongkar_lifetime || 0,
+                            tonnage_loading: historicalTonnage.muat_lifetime || 0,
+                            tonnage_unloading: historicalTonnage.bongkar_lifetime || 0
+                        };
                         childDb.close();
                     } catch (e) { console.error(e); }
                 }

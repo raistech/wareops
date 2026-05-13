@@ -61,21 +61,29 @@ export const SummarySection = ({
               <div className="text-left">
                 <div className="text-[0.65rem] font-black text-[#C5A059] uppercase mb-1">Loading</div>
                 <div className="flex justify-between items-end mb-1">
-                  <span className="text-2xl font-black text-[#C5A059]">{summary.totalFinishedLoading}</span>
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-black text-[#C5A059] leading-none">{summary.totalFinishedLoading}</span>
+                    <span className="text-[0.65rem] font-bold text-[#C5A059] opacity-70 mt-1">{summary.totalTonnageMuatToday.toFixed(1)} T</span>
+                  </div>
                   <span className="text-[0.6rem] font-bold text-slate-400 uppercase">Day</span>
                 </div>
-                <div className="text-[0.65rem] font-bold text-slate-400 border-t border-slate-100 pt-1">
-                  <span className="text-slate-500">Total:</span> {summary.totalLifetimeLoading}
+                <div className="text-[0.65rem] font-bold text-slate-400 border-t border-slate-100 pt-1 flex flex-col gap-0.5">
+                  <div><span className="text-slate-500">Total:</span> {summary.totalLifetimeLoading}</div>
+                  <div className="text-[10px] text-[#C5A059] font-black">{summary.totalTonnageMuatLifetime.toFixed(1)} TON</div>
                 </div>
               </div>
               <div className="text-left">
                 <div className="text-[0.65rem] font-black text-[#996515] uppercase mb-1">Unloading</div>
                 <div className="flex justify-between items-end mb-1">
-                  <span className="text-2xl font-black text-[#996515]">{summary.totalFinishedUnloading}</span>
+                  <div className="flex flex-col">
+                    <span className="text-2xl font-black text-[#996515] leading-none">{summary.totalFinishedUnloading}</span>
+                    <span className="text-[0.65rem] font-bold text-[#996515] opacity-70 mt-1">{summary.totalTonnageBongkarToday.toFixed(1)} T</span>
+                  </div>
                   <span className="text-[0.6rem] font-bold text-slate-400 uppercase">Day</span>
                 </div>
-                <div className="text-[0.65rem] font-bold text-slate-400 border-t border-slate-100 pt-1">
-                  <span className="text-slate-500">Total:</span> {summary.totalLifetimeUnloading}
+                <div className="text-[0.65rem] font-bold text-slate-400 border-t border-slate-100 pt-1 flex flex-col gap-0.5">
+                  <div><span className="text-slate-500">Total:</span> {summary.totalLifetimeUnloading}</div>
+                  <div className="text-[10px] text-[#996515] font-black">{summary.totalTonnageBongkarLifetime.toFixed(1)} TON</div>
                 </div>
               </div>
             </div>

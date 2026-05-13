@@ -225,6 +225,36 @@ export const WarehouseMonitoring = ({
                   </div>
                 </div>
               </div>
+
+              {/* Tonnage Section */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <div className="text-left p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex justify-between items-end mb-1">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-black text-[#C5A059]">{stats.tonnage_muat_today ? stats.tonnage_muat_today.toFixed(1) : 0}</span>
+                      <span className="text-[0.65rem] font-bold text-slate-400">Ton</span>
+                    </div>
+                    <span className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-tighter">Day Out</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1.5 border-t border-slate-200">
+                    <span className="text-[0.55rem] font-bold text-slate-500 uppercase">Total Out</span>
+                    <span className="text-[0.65rem] font-black text-[#C5A059]">{w.lifetime?.tonnage_loading ? w.lifetime.tonnage_loading.toFixed(1) : 0}</span>
+                  </div>
+                </div>
+                <div className="text-left p-3.5 bg-slate-50 rounded-2xl border border-slate-100">
+                  <div className="flex justify-between items-end mb-1">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-xl font-black text-[#996515]">{stats.tonnage_bongkar_today ? stats.tonnage_bongkar_today.toFixed(1) : 0}</span>
+                      <span className="text-[0.65rem] font-bold text-slate-400">Ton</span>
+                    </div>
+                    <span className="text-[0.6rem] font-bold text-slate-400 uppercase tracking-tighter">Day In</span>
+                  </div>
+                  <div className="flex justify-between items-center pt-1.5 border-t border-slate-200">
+                    <span className="text-[0.55rem] font-bold text-slate-500 uppercase">Total In</span>
+                    <span className="text-[0.65rem] font-black text-[#996515]">{w.lifetime?.tonnage_unloading ? w.lifetime.tonnage_unloading.toFixed(1) : 0}</span>
+                  </div>
+                </div>
+              </div>
               <div className={`${
                 occPercent > 80 ? 'bg-red-50 border border-red-100' : 
                 occPercent > 50 ? 'bg-amber-50 border border-amber-100' : 
